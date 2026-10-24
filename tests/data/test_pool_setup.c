@@ -30,7 +30,7 @@
 
 #include "codec/state_codec.h"
 #include "core/sha256.h"
-#include "data/pool_tables.h"
+#include "data/formats/reg-mc/pool_tables.h"
 #include "data/support_manifest.h"
 #include "state/battle_internal.h"
 #include "state/closure_member.h"
@@ -41,8 +41,8 @@
 #include "support/pool.h"
 #include "support/team_c.h"
 
-#define FP_KP_HEX "f294fc70b1fb2c3431af169d7f201f5798b29b4483f25d5cdbfde9798e79c74e" /* A0 PR-2 (parts 1 and 4, table hash d6eee672; measured; previous df5c0ef6...); A0 PR-1 (parts 2 and 3, table hash d14de900; measured in Release and Debug, equal to tools/state_model/state_v3_model.py; previous a2e950c5...); the model fingerprint of the pool tables; batch A0 part 3 (generator rows of Raging Fury, Double Hit, Tail Slap, Bone Rush, Solar Blade, Snap Trap, the eight marks; previous dd791294...); changed by steps K1 (#476, entry 5dc: Temper Flare), K2 (#474, entry 5dd: Piercing Drill, Excadrite), K3 (#473, entry 5de: Speed Swap) and K4 (#475, entry 5dl: Gravity, the pseudo weather row) */
-#define FP_KPD_HEX "ab7ef4db2aec49f574cb4b5cde2240fd6ab66d8150bfe28479019ec99108f0be" /* A0 PR-2 (as FP_KP_HEX; previous 950bd25a...); A0 PR-1 (as FP_KP_HEX; previous 9b569bbb...); POOL_DEV: the same table hash, changed by steps K1, K2, K3, K4 and batch A0 part 3 (previous 7456fe2e...) */
+#define FP_KP_HEX "c4d08f843b984a18316aaf683ab3c968b391988ca4dad76ea06c0868e56abfeb" /* A2a (entry 5dy, table hash e4aeeb21; measured; previous f294fc70...); A0 PR-2 (parts 1 and 4, table hash d6eee672; measured; previous df5c0ef6...); A0 PR-1 (parts 2 and 3, table hash d14de900; measured in Release and Debug, equal to tools/state_model/state_v3_model.py; previous a2e950c5...); the model fingerprint of the pool tables; batch A0 part 3 (generator rows of Raging Fury, Double Hit, Tail Slap, Bone Rush, Solar Blade, Snap Trap, the eight marks; previous dd791294...); changed by steps K1 (#476, entry 5dc: Temper Flare), K2 (#474, entry 5dd: Piercing Drill, Excadrite), K3 (#473, entry 5de: Speed Swap) and K4 (#475, entry 5dl: Gravity, the pseudo weather row) */
+#define FP_KPD_HEX "1e150a55af7d68c3d8303d958ce5bc7947305ff38e995fb6c6f3eec937bf302c" /* A2a (as FP_KP_HEX; previous ab7ef4db...); A0 PR-2 (as FP_KP_HEX; previous 950bd25a...); A0 PR-1 (as FP_KP_HEX; previous 9b569bbb...); POOL_DEV: the same table hash, changed by steps K1, K2, K3, K4 and batch A0 part 3 (previous 7456fe2e...) */
 
 /* The public create under `ctx` gives `gated`, and the build without the
  * support gate `ungated`. */

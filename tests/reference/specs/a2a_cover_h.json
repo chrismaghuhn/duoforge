@@ -1,0 +1,51 @@
+{
+  "name": "a2a_cover_h",
+  "purpose": "A2a (decision 0015 entry 5dy, fourteen abilities at existing hooks): a PASS battle of the random differential campaign of run 52003 (diff_driver.py random, seed 52003, battle fz_52003_172, teams of the A2a branch, all content marked, every battle of the run PASS). It shows Corrosion with Synchronize (the poison passed back to the Corrosion holder, -immune).",
+  "data": "pool",
+  "format": "gen9championsvgc2026regmc",
+  "seed": "sodium,9a19d93671f698ebcb3b95f8660ec2e334218945d4bbe35c0ac29b906de0afb5",
+  "teams": [
+    "Umbreon (M) @ Expert Belt\nAbility: Synchronize\nLevel: 50\nEVs: 32 HP / 32 SpD / 2 Spe\nCalm Nature\n- Toxic\n- Swagger\n- Snarl\n- Foul Play\n\nIncineroar (M) @ Charcoal\nAbility: Intimidate\nLevel: 50\nEVs: 32 HP / 32 Atk / 2 Spe\nAdamant Nature\n- Fake Out\n- Flare Blitz\n- Parting Shot\n- Darkest Lariat\n\nCorviknight (M) @ Rocky Helmet\nAbility: Mirror Armor\nLevel: 50\nEVs: 32 HP / 32 Atk / 2 Spe\nAdamant Nature\n- Brave Bird\n- Iron Head\n- Body Press\n- Feather Dance\n\nMetagross @ Metal Coat\nAbility: Clear Body\nLevel: 50\nEVs: 32 HP / 32 Atk / 2 Spe\nAdamant Nature\n- Meteor Mash\n- Zen Headbutt\n- Bullet Punch\n- Icy Wind\n\nEspeon (F) @ Leftovers\nAbility: Synchronize\nLevel: 50\nEVs: 32 HP / 32 SpA / 2 Spe\nTimid Nature\n- Psychic\n- Shadow Ball\n- Yawn\n- Mud-Slap\n\nGardevoir (F) @ Sitrus Berry\nAbility: Trace\nLevel: 50\nEVs: 32 HP / 32 SpA / 2 Spe\nModest Nature\n- Moonblast\n- Psychic\n- Will-O-Wisp\n- Double Team",
+    "Watchog (M) @ Silk Scarf\nAbility: Illuminate\nLevel: 50\nEVs: 32 HP / 32 Atk / 2 Spe\nAdamant Nature\n- Hypnosis\n- Crunch\n- Confuse Ray\n- Screech\n\nGlimmora (F) @ Focus Sash\nAbility: Corrosion\nLevel: 50\nEVs: 32 HP / 32 SpA / 2 Spe\nModest Nature\n- Toxic\n- Sludge Wave\n- Power Gem\n- Confuse Ray\n\nGoodra-Hisui (M) @ Leftovers\nAbility: Gooey\nLevel: 50\nEVs: 32 HP / 32 Atk / 2 Spe\nAdamant Nature\n- Iron Head\n- Dragon Claw\n- Breaking Swipe\n- Body Press\n\nAvalugg (M) @ Mental Herb\nAbility: Ice Body\nLevel: 50\nEVs: 32 HP / 32 Atk / 2 Spe\nAdamant Nature\n- Icicle Crash\n- Snowscape\n- Body Press\n- Rock Slide\n\nPawmot (F) @ Sitrus Berry\nAbility: Natural Cure\nLevel: 50\nEVs: 32 HP / 32 Atk / 2 Spe\nJolly Nature\n- Wild Charge\n- Close Combat\n- Electric Terrain\n- Sweet Kiss\n\nDragalge (F) @ Rocky Helmet\nAbility: Poison Point\nLevel: 50\nEVs: 32 HP / 32 SpA / 2 Spe\nModest Nature\n- Sludge Bomb\n- Dragon Pulse\n- Muddy Water\n- Snowscape"
+  ],
+  "choices": [
+    {
+      "p1": "team 6543",
+      "p2": "team 2546"
+    },
+    {
+      "p1": "switch 4, move 4 1",
+      "p2": "move 4 1, move 4 2"
+    },
+    {
+      "p1": "switch 3, move 4 2",
+      "p2": "move 1 2, move 2 -1"
+    },
+    {
+      "p1": "move 1 2, switch 3",
+      "p2": "move 2, switch 3"
+    },
+    {
+      "p1": "move 4, move 4 -1",
+      "p2": "move 3 -2, move 1 -1"
+    },
+    {
+      "p2": "switch 3, switch 4"
+    },
+    {
+      "p1": "move 1 -2, move 1 2",
+      "p2": "move 1 2, move 4"
+    },
+    {
+      "p1": "pass, switch 3"
+    },
+    {
+      "p1": "move 1 1, move 4 1",
+      "p2": "move 1 2, move 4"
+    },
+    {
+      "p1": "move 1 1, move 2 2",
+      "p2": "pass, move 3"
+    }
+  ]
+}

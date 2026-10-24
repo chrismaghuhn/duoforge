@@ -1,8 +1,8 @@
 """The pin checks of steps that span moves, items and abilities: the cross-area facts of single steps and
 the content batches (C1, C2, C4, C5, K2, A0, A0P1).
 
-Part of the table generator tools/datagen/gen_closure.py (restructure step 5: split by area; every
-statement is unchanged from gen_closure.py@8800b625).
+Part of the table generator tools/datagen/gen_closure.py (restructure step 5: split by area from
+gen_closure.py@8800b625).
 """
 import re
 

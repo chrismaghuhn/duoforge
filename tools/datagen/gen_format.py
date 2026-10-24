@@ -5,7 +5,11 @@ data/formats/reg-mc.json holds the facts of Reg M-C: the format id, the rules, l
 Point limits, the clauses, the timer and the pool source (data/formats/pools/reg-mc.json, the output of
 the pinned TeamValidator). Every fact quotes the line of the pinned Showdown checkout it comes from.
 
-This tool writes src/data/format_tables.h: the facts the C engine uses, as named constants (DFI_FORMAT_*), with
+A definition may have a tables section (restructure step 5): what gen_closure.py --pool --format <id> builds for the
+format (its rule set, the writer's names, the learnset bytes, the id bounds and the excluded formes); check_tables
+checks its shape.
+
+This tool writes src/data/formats/reg-mc/format_tables.h: the facts the C engine uses, as named constants (DFI_FORMAT_*), with
 _Static_asserts against the public constants that hold the same values. gen_closure.py reads the format id and the
 pool source through load_format().
 
@@ -14,11 +18,16 @@ docs/superpowers/specs/2026-10-15-gen9-ou-design.md), is checked the same way (i
 with --pin, every quote). The engine reads none of its values (the singles kind of decision 0083 plays the format on
 the Reg M-C pool tables), so it writes no header: --format champions-ou with no other option only checks.
 
+A third, data/formats/gen9ou.json ([Gen 9] OU, singles on the gen9 mod; step O8 of the Gen 9 OU design), is checked
+the same way and writes no header either. Its tables section names the gen9 rule set, which gen_closure.py refuses by
+name until the Gen 9 design brings standalone table sets.
+
 usage:
-  python3 tools/datagen/gen_format.py                  # write src/data/format_tables.h
+  python3 tools/datagen/gen_format.py                  # write src/data/formats/reg-mc/format_tables.h
   python3 tools/datagen/gen_format.py --check          # compare only
   python3 tools/datagen/gen_format.py --pin <checkout> # compare every quote with the pinned checkout
   python3 tools/datagen/gen_format.py --format champions-ou [--pin <checkout>]  # check the second definition
+  python3 tools/datagen/gen_format.py --format gen9ou [--pin <checkout>]        # check the third definition
 """
 import hashlib
 import io
@@ -30,11 +39,17 @@ import sys
 REPO = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 FORMAT_FILE = os.path.join('data', 'formats', 'reg-mc.json')
 ENGINE_FORMAT = 'reg-mc'  # the one format the engine plays; only its definition writes the header
-HEADER = os.path.join('src', 'data', 'format_tables.h')
+HEADER = os.path.join('src', 'data', 'formats', 'reg-mc', 'format_tables.h')
 
 TOP_KEYS = {'comment', 'id', 'showdown_commit', 'showdown_format_id', 'facts', 'engine', 'pool'}
 ENGINE_KEYS = {'comment', 'active_per_side'}
 POOL_KEYS = {'source', 'sha256', 'made_by'}
+# The tables section (restructure step 5, agreed with the OU lane): what gen_closure.py --pool --format <id> builds for
+# the format. Optional: a definition without it builds no tables, and gen_closure.py refuses such a format by name.
+TABLES_KEYS = {'comment', 'rule_set', 'symbol_prefix', 'include_guard', 'stem', 'learnset_bytes', 'bounds',
+               'excluded_formes'}
+BOUND_KEYS = {'formes', 'moves', 'moves_per_forme', 'items', 'abilities'}
+EXCLUDED_KEYS = {'id', 'reason'}
 
 
 def fail(message):
@@ -84,7 +99,7 @@ READERS = {
     'item_clause': number(r"^'Item Clause = (\d+)'$"),
     'species_clause': present("'Species Clause'"),
     'nickname_clause': present("'Nickname Clause'"),
-    'terastallization': lambda q: False if q == 'return null;' else None,
+    'terastallization': lambda q: False if q == 'return null;' else True if q == 'return pokemon.teraType;' else None,
     'timer_starting_s': number(r"'Timer Starting = (\d+)'"),
     'timer_grace_s': number(r"'Timer Grace = (\d+)'"),
     'timer_add_per_turn_s': number(r"'Timer Add Per Turn = (\d+)'"),
@@ -110,6 +125,17 @@ READERS = {
     'ladder_timer_max_per_turn_s': number(r'^const MAX_TURN_TIME = (\d+);$'),
     'ladder_timer_max_first_turn_s': number(r'^const MAX_TURN_TIME = (\d+);$'),
     'ladder_timeout_auto_choose': lambda q: False if q == 'timeoutAutoChoose: false,' else None,
+    # The facts of gen9ou: the base Standard (data/rulesets.ts, the gen9 mod has none of its own), the format's own
+    # clauses, the singles minimum team size, the level and EV limits of the rule table's defaults and Terastallization.
+    'standard_clauses': quoted_items,
+    'evasion_items_clause': present("'Evasion Items Clause'"),
+    'evasion_moves_clause': present("'Evasion Moves Clause'"),
+    'evasion_abilities_clause': present("'Evasion Abilities Clause'"),
+    'sleep_clause_mod_removed': present("'!Sleep Clause Mod'"),
+    'min_team_size_singles': number(r'^(\d+);$'),
+    'max_level': number(r"\|\| (\d+);$"),
+    'ev_total_max': number(r'^this\.evLimit = dex\.gen > 2 \? (\d+) : null;$'),
+    'ev_max': number(r'^if \(set\.evs\[stat as StatID\] > (\d+)\) \{$'),
 }
 
 # The facts each definition must hold, exactly.
@@ -126,6 +152,13 @@ FACTS = {
                      'terastallization', 'ladder_timer_starting_s', 'ladder_timer_grace_s',
                      'ladder_timer_add_per_turn_s', 'ladder_timer_max_per_turn_s', 'ladder_timer_max_first_turn_s',
                      'ladder_timeout_auto_choose'},
+    'gen9ou': {'name', 'mod', 'game_type_default', 'ruleset', 'banlist', 'standard_ag_rules', 'standard_rules',
+               'standard_clauses', 'team_preview', 'lead_only_preview', 'endless_battle_clause', 'species_clause',
+               'nickname_clause', 'ohko_clause', 'evasion_items_clause', 'evasion_moves_clause',
+               'evasion_abilities_clause', 'sleep_moves_clause', 'sleep_clause_mod_removed', 'min_team_size_singles',
+               'max_team_size', 'max_level', 'moves_per_set', 'ev_total_max', 'ev_max', 'terastallization',
+               'ladder_timer_starting_s', 'ladder_timer_grace_s', 'ladder_timer_add_per_turn_s',
+               'ladder_timer_max_per_turn_s', 'ladder_timer_max_first_turn_s', 'ladder_timeout_auto_choose'},
 }
 assert set(READERS) == set().union(*FACTS.values())
 
@@ -159,6 +192,32 @@ CONTEXT = {'reg-mc': {
     ('sim/team-validator.ts', 1313): '} else if (useStatPoints) {',
     ('server/room-battle.ts', 183): "const hasLongTurns = format.gameType !== 'singles';",
     ('server/room-battle.ts', 194): 'this.settings = {',
+}, 'gen9ou': {
+    ('config/formats.ts', 73): '{',
+    ('config/formats.ts', 78): '},',
+    ('data/rulesets.ts', 11): 'standardag: {',
+    ('data/rulesets.ts', 15): 'ruleset: [',
+    ('data/rulesets.ts', 17): '],',
+    ('data/rulesets.ts', 19): 'standard: {',
+    ('data/rulesets.ts', 23): 'ruleset: [',
+    ('data/rulesets.ts', 26): '],',
+    ('data/rulesets.ts', 166): 'obtainable: {',
+    ('data/rulesets.ts', 170): "ruleset: ['Obtainable Moves', 'Obtainable Abilities', 'Obtainable Formes', 'EV Limit = Auto', "
+                               "'Obtainable Misc'],",
+    ('sim/battle-actions.ts', 1924): 'canTerastallize(pokemon: Pokemon) {',
+    ('sim/battle-actions.ts', 1925): 'if (pokemon.getItem().zMove || pokemon.canMegaEvo || this.dex.gen !== 9) {',
+    ('sim/battle.ts', 1391): "if (type === 'teampreview') {",
+    ('sim/battle.ts', 1392): '// `pickedTeamSize = 6` means the format wants the user to select',
+    ('sim/battle.ts', 1395): 'const pickedTeamSize = this.ruleTable.pickedTeamSize;',
+    ('sim/dex-formats.ts', 272): "const gameTypeMinTeamSize = ['triples', 'rotation'].includes(format.gameType as 'triples') ? 3 :",
+    ('sim/dex-formats.ts', 273): "format.gameType === 'doubles' ? 2 :",
+    ('sim/dex-formats.ts', 285): "this.minTeamSize = Number(this.valueRules.get('minteamsize')) || 0;",
+    ('sim/dex-formats.ts', 287): "this.pickedTeamSize = Number(this.valueRules.get('pickedteamsize')) || null;",
+    ('sim/dex-formats.ts', 343): "if (this.valueRules.get('evlimit') === 'Auto') {",
+    ('sim/dex-formats.ts', 391): 'if (!this.minTeamSize) this.minTeamSize = Math.max(gameTypeMinTeamSize, this.pickedTeamSize || 0);',
+    ('sim/team-validator.ts', 1319): '} else { // EVs',
+    ('server/room-battle.ts', 183): "const hasLongTurns = format.gameType !== 'singles';",
+    ('server/room-battle.ts', 194): 'this.settings = {',
 }}
 
 # The facts the engine uses: (constant, fact or engine key, the public constant of the same value or None).
@@ -184,14 +243,57 @@ def format_file(format_id):
     return os.path.join('data', 'formats', format_id + '.json')
 
 
+def check_keys(rel, what, got, want):
+    """Exactly the keys `want`: a missing or an unknown key fails by name, nothing gets a default."""
+    if type(got) is not dict:
+        fail('%s: %s is not an object' % (rel, what))
+    missing, unknown = sorted(want - set(got)), sorted(set(got) - want)
+    if missing or unknown:
+        fail('%s: %s: missing %s, unknown %s' % (rel, what, missing or 'none', unknown or 'none'))
+
+
+def check_tables(tables, rel):
+    """The tables section of a definition, checked by shape (gen_closure.py checks the rule set and the pool)."""
+    check_keys(rel, 'tables', tables, TABLES_KEYS)
+    for key in ('comment', 'rule_set', 'symbol_prefix', 'include_guard', 'stem'):
+        if type(tables[key]) is not str or not tables[key]:
+            fail('%s: tables.%s must be a non-empty string' % (rel, key))
+    if not re.fullmatch(r'[a-z][a-z0-9]*', tables['symbol_prefix']):
+        fail('%s: tables.symbol_prefix %r is not a lower-case C name part' % (rel, tables['symbol_prefix']))
+    if not re.fullmatch(r'DUOFORGE_[A-Z0-9_]+_H', tables['include_guard']):
+        fail('%s: tables.include_guard %r is not DUOFORGE_..._H' % (rel, tables['include_guard']))
+    if not re.fullmatch(r'[a-z][a-z0-9_]*', tables['stem']):
+        fail('%s: tables.stem %r is not a file name stem' % (rel, tables['stem']))
+    if type(tables['learnset_bytes']) is not int or tables['learnset_bytes'] < 1:
+        fail('%s: tables.learnset_bytes must be a positive int' % rel)
+    check_keys(rel, 'tables.bounds', tables['bounds'], BOUND_KEYS)
+    for key, value in tables['bounds'].items():
+        if type(value) is not int or value < 1:
+            fail('%s: tables.bounds.%s must be a positive int' % (rel, key))
+    if type(tables['excluded_formes']) is not list:
+        fail('%s: tables.excluded_formes is not a list' % rel)
+    seen = set()
+    for i, e in enumerate(tables['excluded_formes']):
+        check_keys(rel, 'tables.excluded_formes[%d]' % i, e, EXCLUDED_KEYS)
+        if type(e['id']) is not str or not re.fullmatch(r'[a-z0-9]+', e['id']):
+            fail('%s: tables.excluded_formes[%d].id %r is not a Showdown id' % (rel, i, e['id']))
+        if type(e['reason']) is not str or not e['reason'].strip():
+            fail('%s: tables.excluded_formes[%d] (%s) has no reason' % (rel, i, e['id']))
+        if e['id'] in seen:
+            fail('%s: tables.excluded_formes names %s twice' % (rel, e['id']))
+        seen.add(e['id'])
+
+
 def load_format(repo=REPO, format_id=ENGINE_FORMAT):
     """The format definition, checked: its id, its keys, the facts' shapes and the pool source (its sha256 and the
     Showdown commit and format id of its meta)."""
     rel = format_file(format_id)
     with io.open(os.path.join(repo, rel), encoding='utf-8') as fh:
         fmt = json.load(fh)
-    if set(fmt) != TOP_KEYS or set(fmt['engine']) != ENGINE_KEYS or set(fmt['pool']) != POOL_KEYS:
+    if set(fmt) - {'tables'} != TOP_KEYS or set(fmt['engine']) != ENGINE_KEYS or set(fmt['pool']) != POOL_KEYS:
         fail('%s: unexpected keys' % rel)
+    if 'tables' in fmt:
+        check_tables(fmt['tables'], rel)
     if fmt['id'] != format_id:
         fail('%s: id %r is not %r' % (rel, fmt['id'], format_id))
     if set(fmt['facts']) != FACTS[format_id]:
@@ -261,6 +363,9 @@ def check_pin(fmt, checkout):
     if fmt['id'] == 'champions-ou':
         check_champions_ou(fmt, line)
         return
+    if fmt['id'] == 'gen9ou':
+        check_gen9ou(fmt, line)
+        return
     for rule in ('Species Clause', 'Nickname Clause', 'Item Clause = 1', 'Picked Team Size = Auto'):
         if rule not in rules['flat_rules']['value']:
             fail('Flat Rules lack %s' % rule)
@@ -292,6 +397,44 @@ def check_champions_ou(fmt, line):
         pin = rules[name]['pin']
         if pin[0] != 'data/mods/champions/rulesets.ts' or pin[1] != rule_line or rules[name]['value'] in (None, False):
             fail('fact %s is not the rule of data/mods/champions/rulesets.ts:%d' % (name, rule_line))
+
+
+def check_gen9ou(fmt, line):
+    """The checks of [Gen 9] OU beyond its quotes: a singles format of the gen9 mod without a game type line, its rules
+    the base Standard (data/rulesets.ts, not a mod's), no Item Clause anywhere in its rules, Terastallization, and one
+    position per side."""
+    rules = fmt['facts']
+    entry = [line('config/formats.ts', n) for n in range(73, 79)]
+    if entry[1] != 'name: "%s",' % rules['name']['value'] or any(text.startswith('gameType:') for text in entry):
+        fail('config/formats.ts:73-78 is not the entry of %s without a game type' % rules['name']['value'])
+    if rules['mod']['value'] != 'gen9' or rules['game_type_default']['value'] != 'singles' or \
+            fmt['engine']['active_per_side'] != 1:
+        fail('gen9ou is a singles format of the gen9 mod with one position per side')
+    if rules['ruleset']['value'][0] != 'Standard' or rules['standard_rules']['value'] != ['Standard AG']:
+        fail('the format is not the base Standard')
+    lists = [rules[k]['value'] for k in ('ruleset', 'standard_ag_rules', 'standard_rules', 'standard_clauses')]
+    if any(r.startswith('Item Clause') for value in lists for r in value):
+        fail('gen9ou has no Item Clause; a rule list now names one')
+    if rules['terastallization']['value'] is not True:
+        fail('gen9ou plays with Terastallization')
+    # The other rules are quoted one by one: the line of each must belong to the list it names.
+    for name, (path, rule_line) in (
+            (('team_preview', ('data/rulesets.ts', 16)), ('endless_battle_clause', ('data/rulesets.ts', 16)),
+             ('standard_ag_rules', ('data/rulesets.ts', 16)), ('standard_rules', ('data/rulesets.ts', 24)),
+             ('standard_clauses', ('data/rulesets.ts', 25)), ('species_clause', ('data/rulesets.ts', 25)),
+             ('nickname_clause', ('data/rulesets.ts', 25)), ('ohko_clause', ('data/rulesets.ts', 25)),
+             ('evasion_items_clause', ('data/rulesets.ts', 25)), ('evasion_moves_clause', ('data/rulesets.ts', 25)),
+             ('evasion_abilities_clause', ('config/formats.ts', 76)), ('sleep_moves_clause', ('config/formats.ts', 76)),
+             ('sleep_clause_mod_removed', ('config/formats.ts', 76)),
+             # Quotes that a reader would also accept on another line ("1;", "|| 100;"): their lines are fixed here.
+             ('min_team_size_singles', ('sim/dex-formats.ts', 274)), ('max_level', ('sim/dex-formats.ts', 292)),
+             ('ev_total_max', ('sim/dex-formats.ts', 344)), ('ev_max', ('sim/team-validator.ts', 1321)),
+             ('terastallization', ('sim/battle-actions.ts', 1928)))):
+        pin = rules[name]['pin']
+        if pin[0] != path or pin[1] != rule_line or rules[name]['value'] in (None, False):
+            fail('fact %s is not the rule of %s:%d' % (name, path, rule_line))
+    if 'Sleep Clause Mod' not in rules['standard_clauses']['value']:
+        fail('the Standard clauses no longer name the Sleep Clause Mod that gen9ou removes')
 
 
 def main():

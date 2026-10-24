@@ -1,0 +1,22 @@
+{
+ "source": "items/test_pool_g49.c",
+ "parts": [
+  {
+   "file": "items/test_power_and_accuracy_items.c",
+   "calls": [
+    "check_facts",
+    "check_recorded"
+   ],
+   "header": "step G49 of the content expansion (decision 0015 entry 5ao), the item rows Muscle Band, Wise Glasses and Bright Powder as one\nbatch: the marks and the handler columns of the three rows (ENGINE_ROWS: no handler, not UNMODELED, no family) and the\nrecorded battles g49_* that conformance_pool_data replays. Muscle Band and Wise Glasses (base power x4505/4096 for a Physical\nand a Special move of the holder, onBasePowerPriority 16, after Sharpness and before the type boosters) have no check of their\nown here: their battles show them. The duration rows (Damp Rock, Heat Rock, Smooth Rock, Icy Rock, Terrain Extender) are not\npart of this step.\n\nSplit by subject from the test of step G49 (restructure step 6e; tests/renames.tsv maps the old name)."
+  },
+  {
+   "file": "items/test_bright_powder.c",
+   "calls": [
+    "check_orders",
+    "check_vivillon_refusal",
+    "check_triple_axel_refusal"
+   ],
+   "header": "step G49 of the content expansion (decision 0015 entry 5ao), Bright Powder (data/items.ts:659-670): the accuracy of a move\nagainst the holder x3686/4096, onModifyAccuracyPriority -2, the same priority as Wide Lens (the attacker's side). The two of\npriority -2 have no order in the pin (the holders' Speed, an exact tie draws), so the engine computes both orders and refuses\na move for which they give different accuracies (E_UNSUPPORTED); the multi-hit path refuses a target with Bright Powder.\n\n  - the chain arithmetic: for which base accuracies the two orders of Wide Lens and Bright Powder give different accuracies,\n    for each prefix that Compound Eyes and Snow Cloak or Sand Veil make before them;\n  - the two refusals, each with a control that the same battle with the powder removed (or a Sitrus Berry) is accepted:\n    (a) Compound Eyes and Wide Lens on the attacker, Bright Powder on the target, a move of accuracy 75 (Sleep Powder,\n        Vivillon): the two orders give 97 and 96, so the step is E_UNSUPPORTED; (b) a multi-hit multiaccuracy move (Triple\n        Axel, the recorded g33_triple_axel battle) into a Bright Powder holder.\n\nSplit by subject from the test of step G49 (restructure step 6e; tests/renames.tsv maps the old name)."
+  }
+ ]
+}

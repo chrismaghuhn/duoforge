@@ -5,7 +5,7 @@ against the macros of the generated headers.
 gen_closure.py --pool writes, next to the pool tables, the Showdown id (toID)
 of every forme, move, item, ability and nature as a designated initializer
 ([DFI_MOVE_CLOSECOMBAT] = "closecombat"). This test reads the committed
-src/data/{closure,extended,pool}_tables.h and pool_tables.c and checks, for
+src/data/formats/reg-mc/{closure,extended,pool}_tables.h and pool_tables.c and checks, for
 every table:
   - every macro has exactly one name, and every name one macro (the ids 0 to
     count-1 are all there);
@@ -39,7 +39,7 @@ TABLES = {
 
 
 def read(rel):
-    with open(os.path.join(ROOT, 'src', 'data', rel), 'rb') as fh:
+    with open(os.path.join(ROOT, 'src', 'data', 'formats', 'reg-mc', rel), 'rb') as fh:
         return fh.read().decode('ascii').replace('\r\n', '\n')
 
 

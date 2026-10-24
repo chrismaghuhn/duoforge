@@ -246,7 +246,7 @@ def test_numpy_policy_equals_model_apply(self):
 - `data.load(root=ROOT) -> Data`
   - `Data.tables` comes from `trace_to_c.load_tables(root, False)`.
   - `Data.team(text) -> list[dict]` is `trace_to_c.parse_team`: member dicts with `species`, `gender`, `nature`, `sp`, `ability` (+1), `item` (+1) and `moves`.
-  - `Data.pp_max(move_id) -> int` reads field 6 of the `dfi_closure_moves` rows in `src/data/closure_tables.c`.
+  - `Data.pp_max(move_id) -> int` reads field 6 of the `dfi_closure_moves` rows in `src/data/formats/reg-mc/closure_tables.c`.
   - Also from the `dfi_closure_formes` rows: `Data.mega_forme(forme_id) -> int | None`, `Data.base_forme(forme_id) -> int` and `Data.ability_of(forme_id) -> int` (+1, as `parse_team`).
   - `Data.mega_capable(species, item) -> bool` is true when the item is the stone of the species' Mega (`mega_item`).
   - `Data.forme(name) -> int` is `tables['FORME'][trace_to_c.key(name)]`.

@@ -1,0 +1,40 @@
+{
+ "source": "interactions/test_pool_g83.c",
+ "support": {
+  "header": "support/conformance_replay.h",
+  "items": {
+   "build_setup": "df_conf_build_setup",
+   "bundle_of": "df_conf_bundle_of",
+   "find": "df_conf_find"
+  }
+ },
+ "shared_blocks": [
+  0,
+  4
+ ],
+ "parts": [
+  {
+   "file": "interactions/test_bulletproof_rivalry_leaf_guard_iron_ball.c",
+   "calls": [
+    "check_marks",
+    "check_battles"
+   ],
+   "main_blocks": [
+    0,
+    4
+   ],
+   "header": "step G83 of the content expansion, Bulletproof, Rivalry, Leaf Guard and Iron Ball (decision 0015 entry 5bt), all four engine rows read by id (Bulletproof in dfi_try_hit_abilities; Rivalry in the base power chain; Leaf Guard in dfi_try_status and dfi_yawn; Iron Ball in dfi_grounded and the item chain of dfi_speed_key): the marks and the bullet bit of the flags3 column, and each of the eight battles of its list replays to its end; test_conformance compares the lines and HP of every step.\n\nSplit by subject from the test of step G83 (restructure step 6e; tests/renames.tsv maps the old name)."
+  },
+  {
+   "file": "interactions/test_leaf_guard_mega_sol_refusal.c",
+   "calls": [
+    "check_mega_sol_refusal"
+   ],
+   "main_blocks": [
+    0,
+    4
+   ],
+   "header": "step G83 of the content expansion (decision 0015 entry 5bt), Mega Sol and Leaf Guard, reached through Trace: Gardevoir (Trace, not Grass) copies Leaf Guard from the Meganium foe, and a Mega Meganium (Mega Sol) uses Poison Powder on her in no sun. The pin's Leaf Guard reads Pokemon#effectiveWeather of the target, which is sun for the user's move (sim/pokemon.ts:2193), and refuses the poison; the engine does not model that, so over 16 seeds the step returns DUOFORGE_E_UNSUPPORTED in some of them (Poison Powder's 75% accuracy, and Trace copies only when Meganium is on the field first). The control, the same battle with no Mega evolution, plays every seed with no refusal.\n\nSplit by subject from the test of step G83 (restructure step 6e; tests/renames.tsv maps the old name)."
+  }
+ ]
+}

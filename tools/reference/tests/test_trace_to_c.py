@@ -1083,10 +1083,10 @@ class Library(unittest.TestCase):
     def test_the_weather_rows_of_the_view_are_what_the_weather_lines_say(self):
         """Decision 0018 section 6.1, weather values Sand and Snow: a -weather line that names a weather sets it for 5
         turns, each [upkeep] line is a turn gone, -weather|none ends it. The rows of the C test (weather_rows in
-        tests/test_pool_weather.c: the weather and the turns left after each step of the nine weather battles, for
+        tests/mechanics/test_sand_snow_weather.c: the weather and the turns left after each step of the nine weather battles, for
         both players) must be exactly what these lines give for the committed traces, so that the engine's view is
         checked against the protocol and not against itself."""
-        source = open(os.path.join(ROOT, 'tests', 'mechanics/test_pool_weather.c'), encoding='utf-8').read()
+        source = open(os.path.join(ROOT, 'tests', 'mechanics/test_sand_snow_weather.c'), encoding='utf-8').read()
         rows = {}
         for m in re.finditer(r'\{"(w\d_\w+)", (\d+)u, (\d)u, (\d)u\}', source):
             rows[(m.group(1), int(m.group(2)))] = (int(m.group(3)), int(m.group(4)))
@@ -1119,10 +1119,10 @@ class Library(unittest.TestCase):
         """Decision 0018 section 6.1, terrain values Electric and Misty (step G25): a -fieldstart line that names a terrain sets
         it for 5 turns (the replaced terrain ends without a line), each |upkeep line with a terrain up is one turn gone, a
         -fieldend line ends it (Misty Terrain's has no "move: " in it). The rows of the C test (terrain_rows in
-        tests/test_pool_terrain.c: the terrain and the turns left after each step of the seven battles, for both players)
+        tests/mechanics/test_electric_misty_terrain.c: the terrain and the turns left after each step of the seven battles, for both players)
         must be exactly what these lines give for the committed traces, so that the engine's view is checked against the
         protocol and not against itself."""
-        with open(os.path.join(ROOT, 'tests', 'mechanics/test_pool_terrain.c'), encoding='utf-8') as f:
+        with open(os.path.join(ROOT, 'tests', 'mechanics/test_electric_misty_terrain.c'), encoding='utf-8') as f:
             source = f.read()
         rows = {}
         for m in re.finditer(r'\{"(g25_\w+)", (\d+)u, (\d)u, (\d)u\}', source):
@@ -1263,11 +1263,11 @@ class Library(unittest.TestCase):
         """Decision 0018 section 6.1 for Throat Chop and Heal Block: a position has the bit from the -start line
         (`|-start|X|Throat Chop|[silent]`, `|-start|X|move: Heal Block`) until the matching -end line, or until the
         occupant leaves (`|switch|`, `|drag|`, `|replace|`, `|faint|`). The rows of the C test (view_ext_rows in
-        tests/test_pool_g8.c: the expected view extension after each step of the G8 battles, for both viewers, as
-        masks over side * 2 + slot) must be exactly what these lines give for the committed traces, so the engine's
+        tests/moves/test_throat_chop_heal_block_view.c: the expected view extension after each step of the G8 battles, for
+        both viewers, as masks over side * 2 + slot) must be exactly what these lines give for the committed traces, so the engine's
         extension is checked against the protocol and not against itself."""
         names = ('g8_throat_chop', 'g8_heal_block', 'g8_heal_block_pair', 'g8_heal_block_tie_a', 'g8_heal_block_tie_b')
-        source = open(os.path.join(ROOT, 'tests', 'moves/test_pool_g8.c'), encoding='utf-8').read()
+        source = open(os.path.join(ROOT, 'tests', 'moves/test_throat_chop_heal_block_view.c'), encoding='utf-8').read()
         rows = {}
         for m in re.finditer(r'\{"(g8_\w+)", (\d+)u, 0x([0-9a-f])u, 0x([0-9a-f])u\}', source):
             rows[(m.group(1), int(m.group(2)))] = (int(m.group(3), 16), int(m.group(4), 16))
@@ -1305,14 +1305,14 @@ class Library(unittest.TestCase):
     def test_wide_guard_rows_are_what_the_protocol_lines_say(self):
         """Decision 0018 section 6.1 for Wide Guard: the side of the user has the guard from the
         `|-singleturn|X|Wide Guard` line until the next `|upkeep|` (a second Wide Guard of the same side prints no
-        line and changes nothing). The rows of the C test (guard_rows in tests/test_pool_g7.c: the guard flag of each
+        line and changes nothing). The rows of the C test (guard_rows in tests/mechanics/test_wide_guard.c: the guard flag of each
         side after each step of the G7 battles, as a mask over the sides) must be exactly what these lines give for the
         committed traces, so a guard is live at a mid-turn (pivot) boundary and never at a turn boundary, and the
         engine's flag and view extension are checked against the protocol and not against themselves. Every
         `-activate|X|move: Wide Guard` is at a side whose guard is up, and every `-singleturn` Wide Guard comes
         from a move line of Wide Guard."""
         names = ('g7_wide_guard_a', 'g7_wide_guard_b', 'g7_wide_guard_ally', 'g7_wide_guard_pivot')
-        with open(os.path.join(ROOT, 'tests', 'mechanics/test_pool_g7.c'), encoding='utf-8') as f:
+        with open(os.path.join(ROOT, 'tests', 'mechanics/test_wide_guard.c'), encoding='utf-8') as f:
             source = f.read()
         rows = {}
         for m in re.finditer(r'\{"(g7_\w+)", (\d+)u, 0x([0-9a-f])u\}', source):
@@ -1346,12 +1346,12 @@ class Library(unittest.TestCase):
         """Decision 0015 section 7 for the Protect variant of tail rev 3: a position has protect_kind 1 from the
         `|-singleturn|X|move: Protect` line that follows its `|move|X|Spiky Shield|` line until the next `|upkeep|` or until
         its occupant leaves or faints (Protect and Detect print `-singleturn|X|Protect`: the variant 0). The rows of the C
-        test (kind_rows in tests/test_pool_g20_protect.c: protect_kind of the four positions, side * 2 + slot, after each
+        test (kind_rows in tests/mechanics/test_spiky_shield.c: protect_kind of the four positions, side * 2 + slot, after each
         step of the G20 Spiky Shield battles) must be exactly what these lines give for the committed traces, so the
         variant is live at a boundary inside a turn (a pivot) and never at a turn boundary. Every contact move that a
         Spiky Shield stops is followed by `-damage|attacker|hp|[from] Spiky Shield|[of] holder`, a move without contact by
         nothing of the kind."""
-        with open(os.path.join(ROOT, 'tests', 'mechanics/test_pool_g20_protect.c'), encoding='utf-8') as f:
+        with open(os.path.join(ROOT, 'tests', 'mechanics/test_spiky_shield.c'), encoding='utf-8') as f:
             source = f.read()
         rows = {}
         for m in re.finditer(r'\{"(g20_spiky\w+)", (\d+)u, \{(\d+)u, (\d+)u, (\d+)u, (\d+)u\}\}', source):
@@ -1403,11 +1403,11 @@ class Library(unittest.TestCase):
         """Decision 0018 section 6.1 for Disable: a position has the slot of the move named by `|-start|X|Disable|MOVE` (the
         slot of MOVE in the member's set, the spec's team text: the order of its `- Move` lines, from 1) until the
         `|-end|X|Disable` line or until its occupant leaves (`|switch|` at the position) or faints. The rows of the C test
-        (slot_rows in tests/test_pool_g27.c: the barred slot of the four positions, side * 2 + slot, after each step of the G27
+        (slot_rows in tests/interactions/test_cursed_body_disable.c: the barred slot of the four positions, side * 2 + slot, after each step of the G27
         battles) must be exactly what these lines give for the committed traces. Every `cant|X|Disable|MOVE` is of the barred
         move, a `-start` with [from] ability: Cursed Body comes after a hit at a holder of that ability, and the next move
         line of a barred position is never of its barred move."""
-        with open(os.path.join(ROOT, 'tests', 'interactions/test_pool_g27.c'), encoding='utf-8') as f:
+        with open(os.path.join(ROOT, 'tests', 'interactions/test_cursed_body_disable.c'), encoding='utf-8') as f:
             source = f.read()
         rows = {}
         for m in re.finditer(r'\{"(g27_\w+)", (\d+)u, \{(\d+)u, (\d+)u, (\d+)u, (\d+)u\}\}', source):
@@ -1464,6 +1464,14 @@ class Library(unittest.TestCase):
         self.assertEqual(rows, derived)
         self.assertTrue(any(any(v) for v in derived.values()) and cursed > 0 and cants > 0)
 
+    def test_sites_are_the_draw_site_definitions(self):
+        """The converter's site numbers are the engine's: SITES holds exactly the lines of src/rng/draw_sites.def (restructure
+        step 5c), the frozen record that draw.h checks its DFI_SITE_* against at build time."""
+        with io.open(os.path.join(ROOT, 'src', 'rng', 'draw_sites.def'), encoding='utf-8') as fh:
+            lines = re.findall(r'^DFI_DRAW_SITE\(([A-Z0-9_]+), (\d+)u, "[a-z-]+"\)$', fh.read(), re.M)
+        self.assertEqual(len(lines), len({name for name, _ in lines}))
+        self.assertEqual(trace_to_c.SITES, {name: int(value) for name, value in lines})
+
     def test_cursed_body_is_a_draw_site_of_its_own(self):
         """Cursed Body's randomChance(3, 10) (step G27) is a draw of the site CURSED_BODY, random(10), that ps_trace.js names
         by the effect and the event it runs in; the new public values are the numbers of the header."""
@@ -1477,12 +1485,12 @@ class Library(unittest.TestCase):
         """Decision 0015 section 7 for the toxic stage (step G36): the occupant of a position is badly poisoned from the
         `|-status|X|tox` line until it faints (the status stays through a switch-out), and its stage (the tail's toxic_stage)
         is the number of `|-damage|X|HP tox|[from] psn` events since that line or since it last switched in (the stage
-        starts again: tox's onSwitchIn), at most 15. The rows of the C test (rows in tests/test_pool_g36.c: bit 8 the status,
+        starts again: tox's onSwitchIn), at most 15. The rows of the C test (rows in tests/mechanics/test_toxic.c: bit 8 the status,
         the low byte the stage, of the four positions after each step) must be exactly that for the committed traces. The
         residual damage of tox names psn as its source, so no new cause exists, and the HP field carries the status tox."""
         self.assertEqual(trace_to_c.STATUS['tox'], 6)
         self.assertEqual(trace_to_c.AILMENT['tox'], 6)
-        with open(os.path.join(ROOT, 'tests', 'mechanics/test_pool_g36.c'), encoding='utf-8') as f:
+        with open(os.path.join(ROOT, 'tests', 'mechanics/test_toxic.c'), encoding='utf-8') as f:
             source = f.read()
         rows = {}
         for m in re.finditer(r'\{"(g36_\w+)", (\d+)u, \{(\d+)u, (\d+)u, (\d+)u, (\d+)u\}\}', source):
@@ -1540,12 +1548,12 @@ class Library(unittest.TestCase):
         `|-status|X|slp` line when it lands, or the terrain's `|-activate|X|move: Electric Terrain` (or Misty) line when the terrain
         refuses it (data/moves.ts:4518 and 12172); the volatile ends either way, so a refused sleep clears the bit as well.
         Both end when the occupant leaves (`|switch|` at the position) or faints. The rows of the C test (rows in
-        tests/test_pool_g31.c) must be exactly what these lines give for the committed traces; the sleep that Yawn brings
+        tests/moves/test_taunt_yawn_tail_view.c) must be exactly what these lines give for the committed traces; the sleep that Yawn brings
         has no [from], there are `cant|X|move: Taunt|MOVE` lines, and the new public numbers are the header's."""
         self.assertEqual(trace_to_c.CAUSE['TAUNT'], 20)
         self.assertEqual(trace_to_c.VOLATILE_TAUNT, 6)
         self.assertEqual(trace_to_c.VOLATILE_YAWN, 7)
-        with open(os.path.join(ROOT, 'tests', 'moves/test_pool_g31.c'), encoding='utf-8') as f:
+        with open(os.path.join(ROOT, 'tests', 'moves/test_taunt_yawn_tail_view.c'), encoding='utf-8') as f:
             source = f.read()
         rows = {}
         for m in re.finditer(r'\{"(g31_\w+)", (\d+)u, \{(\d+)u, (\d+)u, (\d+)u, (\d+)u\}\}', source):
@@ -1593,7 +1601,7 @@ class Library(unittest.TestCase):
         """Decision 0018 section 6.1 for the four entry hazards (step G37): a side has Stealth Rock or Sticky Web from its
         `|-sidestart|pN: X|move: ...` line, a layer of Spikes (`|-sidestart|pN: X|Spikes`, no `move: ` in its name) or of
         Toxic Spikes with each such line, and Toxic Spikes no more from the `|-sideend|pN: X|move: Toxic Spikes|[of] Y` line
-        of a grounded Poison type that absorbed them. The rows of the C test (hazard_rows in tests/test_pool_g37.c: stealth
+        of a grounded Poison type that absorbed them. The rows of the C test (hazard_rows in tests/mechanics/test_entry_hazards.c: stealth
         rock, spikes, toxic spikes and sticky web of side 0, then of side 1, after each step of the G37 battles) must be
         exactly what these lines give for the committed traces, and what the reference's own state (the key `hazards` of the
         harness, in creation order) holds: the engine's tail and view are checked against the game and not against
@@ -1604,7 +1612,7 @@ class Library(unittest.TestCase):
         names_ = ('stealthrock', 'spikes', 'toxicspikes', 'stickyweb')
         lines_of = {'move: Stealth Rock': 0, 'Spikes': 1, 'move: Spikes': 1, 'move: Toxic Spikes': 2, 'move: Sticky Web': 3}
         most = (1, 3, 2, 1)
-        with open(os.path.join(ROOT, 'tests', 'mechanics/test_pool_g37.c'), encoding='utf-8') as f:
+        with open(os.path.join(ROOT, 'tests', 'mechanics/test_entry_hazards.c'), encoding='utf-8') as f:
             source = f.read()
         rows = {}
         for m in re.finditer(r'\{"(g37_\w+)", (\d+)u, \{((?:\d+u(?:, )?){10})\}\}', source):
@@ -1650,12 +1658,12 @@ class Library(unittest.TestCase):
         """Decision 0018 section 6.1 for Aurora Veil: a side has the screen from the `|-sidestart|pN: X|move: Aurora Veil`
         line (5 turns, 8 when the user of the move holds Light Clay: the sheet, which is the spec's team text) and its turns
         left count down at every `|upkeep|` line until the `-sideend` line of the screen ends it (at the residual where
-        one turn is left). The rows of the C test (veil_rows in tests/test_pool_g20.c: the turns left of each side after
+        one turn is left). The rows of the C test (veil_rows in tests/mechanics/test_aurora_veil.c: the turns left of each side after
         each step of the G20 battles) must be exactly what these lines give for the committed traces, so the engine's
         tail and view extension are checked against the protocol and not against themselves. Every `-sidestart` comes from
         a move line of Aurora Veil of that side, and a `-sideend` comes with one turn left; a failed Aurora Veil (`-fail`
         after the move line) leaves the rows alone."""
-        with open(os.path.join(ROOT, 'tests', 'mechanics/test_pool_g20.c'), encoding='utf-8') as f:
+        with open(os.path.join(ROOT, 'tests', 'mechanics/test_aurora_veil.c'), encoding='utf-8') as f:
             source = f.read()
         rows = {}
         for m in re.finditer(r'\{"(g20_\w+)", (\d+)u, \{(\d+)u, (\d+)u\}\}', source):
@@ -1703,12 +1711,12 @@ class Library(unittest.TestCase):
     def test_item_transfer_rows_are_what_the_protocol_lines_say(self):
         """Decision 0018 section 6.1 for Trick, Switcheroo, Thief and Covet (step G29): the item_now of every roster member
         after each step, and the numbers of `-item` and silent `-enditem ... [from] move:` lines, are what the committed
-        traces' protocol lines say alone; the rows of tests/test_pool_g29.c must be exactly that. `|-item|X|Item|[from] move:
+        traces' protocol lines say alone; the rows of tests/items/test_item_transfer.c must be exactly that. `|-item|X|Item|[from] move:
         M` gives X the item (item id + 1; a Thief's or Covet's `[of] Y` takes Y's away, 255), `|-enditem|X|Item|[silent]|[from]
         move: M` takes X's away; a used-up item and a switch change nothing. Also the converter: the lines are ITEM_START (cause
         MOVE) and ITEM_END (cause ITEM_TAKEN), and any other shape is refused."""
         names = ('g29_trick_scarf', 'g29_empty_hands', 'g29_thief_covet', 'g29_trick_fails', 'g29_edge_cases', 'g29_trick_lock_before_move', 'g29_thief_fainted')
-        source = open(os.path.join(ROOT, 'tests', 'items/test_pool_g29.c'), encoding='utf-8').read()
+        source = open(os.path.join(ROOT, 'tests', 'items/test_item_transfer.c'), encoding='utf-8').read()
         rows = {}
         for m in re.finditer(r'\{"(g29_\w+)", (\d+)u, \{([^}]*)\}, (\d+)u, (\d+)u\}', source):
             codes = tuple(int(x.strip().rstrip('u')) for x in m.group(3).split(','))
@@ -1809,7 +1817,7 @@ class Library(unittest.TestCase):
     def test_item_taken_rows_are_what_the_protocol_lines_say(self):
         """Decision 0018 section 6.1 for Knock Off: a member holds nothing from the `|-enditem|X|Item|[from] move: Knock Off|
         [of] Y` line on, and nothing clears it (the item stays gone across a switch-out and a faint: sim/pokemon.ts:1851-1866
-        takeItem sets pokemon.item to the empty item for good). The rows of the C test (rows in tests/test_pool_g16.c: per
+        takeItem sets pokemon.item to the empty item for good). The rows of the C test (rows in tests/items/test_knock_off.c: per
         step the members that hold nothing as a mask over side * 6 + roster index, the number of such lines, the number of
         `|-activate|X|ability: Sticky Hold` lines) must be exactly what these lines give for the committed traces, so the
         engine's tail, events and extension are checked against the protocol and not against itself. Also: the converter
@@ -1817,7 +1825,7 @@ class Library(unittest.TestCase):
         refuses any other shape of a `[from] move:` item line."""
         names = ('g16_removal', 'g16_unburden', 'g16_stones', 'g16_sticky_hold', 'g16_scarf_helmet', 'g16_helmet_faint',
                  'g16_scarf_lock_stays')
-        source = open(os.path.join(ROOT, 'tests', 'items/test_pool_g16.c'), encoding='utf-8').read()
+        source = open(os.path.join(ROOT, 'tests', 'items/test_knock_off.c'), encoding='utf-8').read()
         rows = {}
         for m in re.finditer(r'\{"(g16_\w+)", (\d+)u, 0x([0-9a-f]+)u, (\d+)u, (\d+)u\}', source):
             rows[(m.group(1), int(m.group(2)))] = (int(m.group(3), 16), int(m.group(4)), int(m.group(5)))
@@ -1867,7 +1875,7 @@ class Library(unittest.TestCase):
     def test_imprison_rows_are_what_the_protocol_lines_say(self):
         """Decision 0015 step G38: a position stands with Imprison from the `|-start|X|move: Imprison` line (data/moves.ts:
         9501, onStart) until its occupant leaves (a switch, a drag, a replace or a faint: sim/pokemon.ts:1508 clearVolatile;
-        the volatile has no end line). The rows of the C test (rows in tests/test_pool_g38.c: per step the positions that
+        the volatile has no end line). The rows of the C test (rows in tests/moves/test_imprison.c: per step the positions that
         stand with it as a mask over side * 2 + slot, the number of start lines, the number of `cant|X|move: Imprison|Move`
         lines) must be exactly what these lines give for the committed traces, so the engine's tail, events and extension
         are checked against the protocol and not against itself. Also: the converter reads the start line as VOLATILE_START
@@ -1877,7 +1885,7 @@ class Library(unittest.TestCase):
         Struggle of a request with none left."""
         names = ('g38_imprison_mask', 'g38_imprison_struggle', 'g38_imprison_cant', 'g38_imprison_encore', 'g38_imprison_choice',
                  'g38_imprison_end', 'g38_imprison_pair', 'g38_imprison_struggle_b')
-        source = open(os.path.join(ROOT, 'tests', 'moves/test_pool_g38.c'), encoding='utf-8').read()
+        source = open(os.path.join(ROOT, 'tests', 'moves/test_imprison.c'), encoding='utf-8').read()
         rows = {}
         for m in re.finditer(r'\{"(g38_\w+)", (\d+)u, 0x([0-9a-f]+)u, (\d+)u, (\d+)u\}', source):
             rows[(m.group(1), int(m.group(2)))] = (int(m.group(3), 16), int(m.group(4)), int(m.group(5)))
@@ -1930,12 +1938,12 @@ class Library(unittest.TestCase):
         """Decision 0018 section 6.1 for Soak: a position is Soaked from the `|-start|X|typechange|Water` line until the
         occupant leaves (`|switch|`, `|drag|`, `|replace|`, `|faint|`) or Mega Evolves (`|-mega|`: setSpecies resets the
         types, sim/pokemon.ts:1392; the research table had OUT only). The rows of the C test (rows in
-        tests/test_pool_g11.c: the Soaked positions after each step of the G11 battles, as masks over side * 2 + slot)
+        tests/moves/test_soak.c: the Soaked positions after each step of the G11 battles, as masks over side * 2 + slot)
         must be exactly what these lines give for the committed traces, so the engine's tail and extension are checked
         against the protocol and not against itself. Also: the converter reads the line as TYPE_CHANGE (the type in the
         detail, cause MOVE with Soak), and refuses one that is not a single type of the table."""
         names = ('g11_soak', 'g11_soak_mega', 'g11_soak_stab', 'g11_soak_electro')
-        source = open(os.path.join(ROOT, 'tests', 'moves/test_pool_g11.c'), encoding='utf-8').read()
+        source = open(os.path.join(ROOT, 'tests', 'moves/test_soak.c'), encoding='utf-8').read()
         rows = {}
         for m in re.finditer(r'\{"(g11_\w+)", (\d+)u, 0x([0-9a-f])u\}', source):
             rows[(m.group(1), int(m.group(2)))] = int(m.group(3), 16)
@@ -1978,13 +1986,13 @@ class Library(unittest.TestCase):
         """Decision 0018 section 6.1 for Encore: a position is Encored from the `|-start|X|Encore` line, to the slot of the
         occupant's last `|move|` line on its open sheet (its set's move order), until the matching `|-end|X|Encore` or
         until the occupant leaves (`|switch|`, `|drag|`, `|replace|`, `|faint|`). The rows of the C test (rows in
-        tests/test_pool_g9.c: the slot + 1 of each position after each step of the g09 battles) must be exactly what
+        tests/moves/test_encore.c: the slot + 1 of each position after each step of the g09 battles) must be exactly what
         these lines give for the committed traces and specs, so the engine's tail and extension are checked against the
         protocol and not against itself. Also: the converter reads both lines as VOLATILE_START and VOLATILE_END with
         the Encore detail."""
         names = ('g09_encore_lock', 'g09_encore_fail', 'g09_encore_late', 'g09_encore_switch', 'g09_encore_struggle',
                  'g09_encore_tie_a', 'g09_encore_tie_b', 'g09_encore_encore')
-        source = open(os.path.join(ROOT, 'tests', 'moves/test_pool_g9.c'), encoding='utf-8').read()
+        source = open(os.path.join(ROOT, 'tests', 'moves/test_encore.c'), encoding='utf-8').read()
         rows = {}
         for m in re.finditer(r'\{"(g09_\w+)", (\d+)u, \{(\d+)u, (\d+)u, (\d+)u, (\d+)u\}\}', source):
             rows[(m.group(1), int(m.group(2)))] = [int(m.group(i)) for i in (3, 4, 5, 6)]
@@ -2105,14 +2113,14 @@ class Library(unittest.TestCase):
     def test_recharge_rows_are_what_the_protocol_lines_say(self):
         """Decision 0018 section 6.1 for the recharge (step G17): a position must recharge from the `|-mustrecharge|X`
         line until the `|cant|X|recharge` line or until the occupant leaves (`|switch|`, `|drag|`, `|replace|`,
-        `|faint|`); Encore as for step G9. The rows of the C test (rows in tests/test_pool_g17.c: per position after each
+        `|faint|`); Encore as for step G9. The rows of the C test (rows in tests/moves/test_recharge.c: per position after each
         step, the recharge flag and the Encored slot + 1) must be exactly what these lines give for the committed traces
         and specs, so the engine's tail, requests and extension are checked against the protocol and not against
         themselves. Every `cant|X|recharge` has the `-mustrecharge` before it, and the line comes only after a move
         line of a recharge move that is not a miss or a block."""
         names = sorted(f[:-5] for f in os.listdir(os.path.join(ROOT, 'tests', 'reference', 'specs')) if f.startswith('g17_'))
         self.assertGreaterEqual(len(names), 9)
-        source = open(os.path.join(ROOT, 'tests', 'moves/test_pool_g17.c'), encoding='utf-8').read()
+        source = open(os.path.join(ROOT, 'tests', 'moves/test_recharge.c'), encoding='utf-8').read()
         rows = {}
         for m in re.finditer(r'\{"(g17_\w+)", (\d+)u, \{(\d+)u, (\d+)u, (\d+)u, (\d+)u\}, \{(\d+)u, (\d+)u, (\d+)u, (\d+)u\}\}',
                              source):
@@ -2189,13 +2197,13 @@ class Library(unittest.TestCase):
         """Decision 0018 section 6.1 for an ability changed by Trace: a position has the copied ability from the
         `|-ability|X|NEW|OLD|[from] ability: Trace|[of] foe` line until its occupant leaves (`|switch|`, `|drag|`,
         `|replace|`, `|faint|`) or Mega Evolves (`|-mega|`: formeChange sets the Mega forme's ability). The rows of the
-        C test (tests/test_pool_ac1.c: the copied ability of the four positions after each step of the ac1 battles)
+        C test (tests/abilities/test_trace.c: the copied ability of the four positions after each step of the ac1 battles)
         must be exactly what these lines give for the committed traces. Also: the converter reads the line as an
         ABILITY event (the new ability in id2, cause ABILITY, the foe in `other`), and refuses a [from] ability line
         that is not Trace's, an [of] that is missing and a plain line with a [from]."""
         names = ('ac1_trace_intimidate', 'ac1_trace_defiant', 'ac1_trace_drizzle', 'ac1_trace_single',
                  'ac1_trace_switch')
-        source = open(os.path.join(ROOT, 'tests', 'abilities/test_pool_ac1.c'), encoding='utf-8').read()
+        source = open(os.path.join(ROOT, 'tests', 'abilities/test_trace.c'), encoding='utf-8').read()
         rows = {}
         for m in re.finditer(r'\{"(ac1_\w+)", (\d+)u, \{([^}]*)\}\}', source):
             cells = [c.strip() for c in m.group(3).split(',')]
@@ -2282,7 +2290,7 @@ class Library(unittest.TestCase):
         `amount` (3, 2, 1, and 0 from onEnd, which a `faint` line follows); `-fieldactivate|move: Perish Song` is an ACTIVATE
         of the move with no position; the cast's own `-start|X|perish3|[silent]` is not shown and never converts. Anything
         else is refused. Decision 0018 section 6.1: the view's `perish` is the last count a position was told, cleared by a
-        faint, a switch or a drag: the rows of the C test (rows in tests/test_pool_g26.c: the count of each position after
+        faint, a switch or a drag: the rows of the C test (rows in tests/moves/test_perish_song.c: the count of each position after
         each step) must be exactly what the committed traces say, so the engine's tail and extension are checked against the
         protocol and not against themselves. After a `perish0` line every position that showed it has a `faint` line in the
         same step, and the win of g26_perish_end goes to the side of the last `faint`."""
@@ -2305,7 +2313,7 @@ class Library(unittest.TestCase):
         self.assertEqual(ctx.exception.rule, 'fieldactivate-line')
         names = ('g26_perish_song', 'g26_perish_recast', 'g26_perish_end', 'g26_perish_survivor_a',
                  'g26_perish_survivor_b', 'g26_perish_soundproof')
-        with open(os.path.join(ROOT, 'tests', 'moves/test_pool_g26.c'), encoding='utf-8') as f:
+        with open(os.path.join(ROOT, 'tests', 'moves/test_perish_song.c'), encoding='utf-8') as f:
             source = f.read()
         rows = {}
         for m in re.finditer(r'\{"(g26_\w+)", (\d+)u, \{(\d+)u, (\d+)u, (\d+)u, (\d+)u\}\}', source):
@@ -2356,12 +2364,12 @@ class Library(unittest.TestCase):
         line that is followed by damage to a foe (a miss, a block or an immunity gives nothing; the `-singlemove|X|Glaive
         Rush|[silent]` line is not shown) until the user's next `|move|` or `|cant|` line (BeforeMove, priority 100) or
         until it leaves (`|switch|`, `|drag|`, `|replace|`, `|faint|`). The rows of the C test (rows in
-        tests/test_pool_g19.c: the flag of each position after each step) must be exactly what these lines give for the
+        tests/moves/test_glaive_rush_tail_view.c: the flag of each position after each step) must be exactly what these lines give for the
         committed traces, so the engine's tail and extension are checked against the protocol and not against
         themselves. Every silent line follows such a hit, and no battle shows it for a miss, a block or an immunity."""
         names = sorted(f[:-5] for f in os.listdir(os.path.join(ROOT, 'tests', 'reference', 'specs')) if f.startswith('g19_glaive'))
         self.assertEqual(len(names), 6)  # with g19_glaive_rush_mirror (the replay tracker's coverage)
-        with open(os.path.join(ROOT, 'tests', 'moves/test_pool_g19.c'), encoding='utf-8') as f:
+        with open(os.path.join(ROOT, 'tests', 'moves/test_glaive_rush_tail_view.c'), encoding='utf-8') as f:
             source = f.read()
         rows = {}
         for m in re.finditer(r'\{"(g19_glaive\w+)", (\d+)u, \{(\d+)u, (\d+)u, (\d+)u, (\d+)u\}\}', source):
@@ -2539,8 +2547,8 @@ class Library(unittest.TestCase):
         Detect, the protection of its user: -singleturn) before the next move line."""
         def read(*p):
             return open(os.path.join(ROOT, *p), encoding='utf-8').read()
-        header, source = read('src', 'data', 'pool_tables.h'), read('src', 'data', 'pool_tables.c')
-        ext_moves = int(re.search(r'#define DFI_EXT_MOVE_COUNT (\d+)u', read('src', 'data', 'extended_tables.h')).group(1))
+        header, source = read('src', 'data', 'formats', 'reg-mc', 'pool_tables.h'), read('src', 'data', 'formats', 'reg-mc', 'pool_tables.c')
+        ext_moves = int(re.search(r'#define DFI_EXT_MOVE_COUNT (\d+)u', read('src', 'data', 'formats', 'reg-mc', 'extended_tables.h')).group(1))
         array = source[source.index('dfi_pool_moves[DFI_POOL_MOVE_COUNT] = {'):source.index('dfi_pool_items[')]
         names = re.findall(r'^    /\* (.+?) -- data/', array, re.M)
         ids = {m.group(1): int(m.group(2)) for m in re.finditer(r'#define DFI_MOVE_(?!FLAG)(\w+) (\d+)u', header)}
@@ -2639,6 +2647,48 @@ class Library(unittest.TestCase):
             self.assertEqual(ctx.exception.rule, 'fail-line')
         plain = trace_to_c.step_events(['|-fail|p2a: Dragonite|heal'], 0, roster, maxhp, tables)[0]
         self.assertEqual((plain[0], plain[3], plain[11]), (trace_to_c.EV['FAIL'], 0, 0))
+
+    def test_a2a_lines_and_ties(self):
+        """A2a (decision 0015 entry 5dy): Illuminate's -fail line names `accuracy` as Keen Eye's does (a FAIL with the ability
+        as its cause; another stat or ability is refused); Natural Cure's [silent] -curestatus at the switch-out is kept as
+        CURE_STATUS with the ability as its cause (another [silent] -curestatus stays dropped); Poison Point's roll is the site
+        26; Ice Body's onWeather is a handler of its holder alone and only in snow (Snowscape), like Rain Dish's in rain."""
+        tables = trace_to_c.load_tables(ROOT, True)
+        roster = [{'Starmie': 0}, {'Starmie': 0}]
+        maxhp = [{'Starmie': 100}] * 2
+        line = '|-fail|p2a: Starmie|unboost|accuracy|[from] ability: Illuminate|[of] p2a: Starmie'
+        e = trace_to_c.step_events([line], 0, roster, maxhp, tables)[0]
+        self.assertEqual((e[0], e[1], e[2], e[3], e[5]),
+                         (trace_to_c.EV['FAIL'], 2, 2, trace_to_c.CAUSE['ABILITY'],
+                          tables['ABILITY'][trace_to_c.key('Illuminate')] + 1))
+        for bad in ('|-fail|p2a: Starmie|unboost|def|[from] ability: Illuminate|[of] p2a: Starmie',
+                    '|-fail|p2a: Starmie|unboost|accuracy|[from] ability: Big Pecks|[of] p2a: Starmie'):
+            with self.assertRaises(trace_to_c.ConversionError) as ctx:
+                trace_to_c.step_events([bad], 0, roster, maxhp, tables)
+            self.assertEqual(ctx.exception.rule, 'fail-line')
+        cure = '|-curestatus|p1a: Starmie|tox|[from] ability: Natural Cure|[silent]'
+        e = trace_to_c.step_events([cure], 0, roster, maxhp, tables)
+        self.assertEqual(len(e), 1)
+        self.assertEqual((e[0][0], e[0][1], e[0][3], e[0][5], e[0][11]),
+                         (trace_to_c.EV['CURE_STATUS'], 0, trace_to_c.CAUSE['ABILITY'],
+                          tables['ABILITY'][trace_to_c.key('Natural Cure')] + 1, trace_to_c.AILMENT['tox']))
+        self.assertEqual(trace_to_c.step_events(['|-curestatus|p1a: Starmie|tox|[silent]'], 0, roster, maxhp, tables), [])
+        self.assertEqual(trace_to_c.SITES['POISON_POINT'], 26)
+
+        def tie(*handlers):
+            return {'site': 'SPEED_TIE', 'context': 'each:Weather',
+                    'group': ['P:p%d%s:%d:%s' % (1 + i // 2, 'ab'[i % 2], len(h.split('+')) if h else 0, h)
+                              for i, h in enumerate(handlers)]}
+        two = tie('icebody', '', 'icebody')
+        snow, rain = {'weather': 'snowscape'}, {'weather': 'raindance'}
+        self.assertIsNone(trace_to_c.drop_reason(two, snow, snow, []))
+        self.assertEqual(trace_to_c.drop_reason(two, rain, rain, []), 'each-event tie with at most one holder')
+        self.assertEqual(trace_to_c.drop_reason(tie('icebody', '', ''), snow, snow, []),
+                         'each-event tie with at most one holder')
+        sand = {'weather': 'sandstorm'}
+        group = ['P:p1a:2:sandstorm+icebody', 'P:p1b:1:sandstorm', 'P:p2a:1:sandstorm']
+        log = ['|-damage|p1a: X|90/100|[from] Sandstorm', '|-damage|p1b: Y|90/100|[from] Sandstorm']
+        self.assertIsNone(trace_to_c.drop_reason(dict(two, group=group), sand, sand, log))
 
     def test_every_ability_marked_by_g22_shows_its_effect_in_a_pool_battle(self):
         """The six abilities of step G22 are used in committed pool battles that show what the engine reads, from the
@@ -2839,10 +2889,11 @@ class Cli(unittest.TestCase):
     def tree(self, tmp, names, mutate=None):
         """A small tree in `tmp`: the tables of src/data and some committed battles, one of them changed by
         `mutate(name, spec, trace)`."""
-        os.makedirs(os.path.join(tmp, 'src', 'data'))
+        os.makedirs(os.path.join(tmp, 'src', 'data', 'formats', 'reg-mc'))
         for fname in ('closure_tables.h', 'closure_tables.c', 'extended_tables.h', 'extended_tables.c',
                       'pool_tables.h', 'pool_tables.c'):
-            shutil.copy(os.path.join(ROOT, 'src', 'data', fname), os.path.join(tmp, 'src', 'data', fname))
+            shutil.copy(os.path.join(ROOT, 'src', 'data', 'formats', 'reg-mc', fname),
+                        os.path.join(tmp, 'src', 'data', 'formats', 'reg-mc', fname))
         for kind in ('specs', 'traces'):
             os.makedirs(os.path.join(tmp, 'tests', 'reference', kind))
         for name in names:

@@ -1,0 +1,945 @@
+{
+ "P1_command_changed": [],
+ "P1_inventory": {
+  "debug": {
+   "before_sha256": "6232c60fc0d6ce392e8c58e4b441d9274dba12cbb73c70da2b345deb95deedde",
+   "equal_under_the_renames": true,
+   "names": 1658,
+   "sha256": "4e71cdf6f8129d19f45006900397485a43f91561ee85dd32638ad2a417ab75ac"
+  },
+  "ipo": {
+   "before_sha256": "6232c60fc0d6ce392e8c58e4b441d9274dba12cbb73c70da2b345deb95deedde",
+   "equal_under_the_renames": true,
+   "names": 1658,
+   "sha256": "4e71cdf6f8129d19f45006900397485a43f91561ee85dd32638ad2a417ab75ac"
+  },
+  "noipo": {
+   "before_sha256": "6232c60fc0d6ce392e8c58e4b441d9274dba12cbb73c70da2b345deb95deedde",
+   "equal_under_the_renames": true,
+   "names": 1658,
+   "sha256": "4e71cdf6f8129d19f45006900397485a43f91561ee85dd32638ad2a417ab75ac"
+  }
+ },
+ "P1_properties_equal": true,
+ "P1_renamed": {
+  "debug": [
+   "duoforge.state.pool_ac1 -> duoforge.abilities.trace",
+   "duoforge.state.pool_g11 -> duoforge.moves.soak",
+   "duoforge.state.pool_g16 -> duoforge.items.knock_off",
+   "duoforge.state.pool_g17 -> duoforge.moves.recharge",
+   "duoforge.state.pool_g19 -> duoforge.moves.glaive_rush_tail_view",
+   "duoforge.state.pool_g20 -> duoforge.mechanics.aurora_veil",
+   "duoforge.state.pool_g20_protect -> duoforge.mechanics.spiky_shield",
+   "duoforge.state.pool_g26 -> duoforge.moves.perish_song",
+   "duoforge.state.pool_g27 -> duoforge.interactions.cursed_body_disable",
+   "duoforge.state.pool_g29 -> duoforge.items.item_transfer",
+   "duoforge.state.pool_g31 -> duoforge.moves.taunt_yawn_tail_view",
+   "duoforge.state.pool_g36 -> duoforge.mechanics.toxic",
+   "duoforge.state.pool_g37 -> duoforge.mechanics.entry_hazards",
+   "duoforge.state.pool_g38 -> duoforge.moves.imprison",
+   "duoforge.state.pool_g41 -> duoforge.abilities.shadow_tag",
+   "duoforge.state.pool_g42 -> duoforge.moves.move_result_roost",
+   "duoforge.state.pool_g46_party -> duoforge.flow.party_order",
+   "duoforge.state.pool_g47 -> duoforge.interactions.status_cures",
+   "duoforge.state.pool_g50 -> duoforge.moves.double_shock",
+   "duoforge.state.pool_g52 -> duoforge.interactions.revival_blessing_view",
+   "duoforge.state.pool_g53 -> duoforge.abilities.pressure",
+   "duoforge.state.pool_g55 -> duoforge.items.duration_items",
+   "duoforge.state.pool_g56 -> duoforge.moves.outrage_lock",
+   "duoforge.state.pool_g57 -> duoforge.abilities.magic_bounce",
+   "duoforge.state.pool_g58 -> duoforge.moves.phantom_force",
+   "duoforge.state.pool_g60 -> duoforge.moves.substitute",
+   "duoforge.state.pool_g61 -> duoforge.abilities.sheer_force",
+   "duoforge.state.pool_g62 -> duoforge.moves.haze",
+   "duoforge.state.pool_g64 -> duoforge.moves.moves_batch_2_rows",
+   "duoforge.state.pool_g66 -> duoforge.forms.stance_change",
+   "duoforge.state.pool_g68 -> duoforge.moves.moves_batch_4_rows",
+   "duoforge.state.pool_g69 -> duoforge.abilities.symbiosis",
+   "duoforge.state.pool_g7 -> duoforge.mechanics.wide_guard",
+   "duoforge.state.pool_g70 -> duoforge.moves.skill_swap",
+   "duoforge.state.pool_g71 -> duoforge.moves.attract",
+   "duoforge.state.pool_g72 -> duoforge.mechanics.yawn_exemptions",
+   "duoforge.state.pool_g73 -> duoforge.abilities.moody",
+   "duoforge.state.pool_g74 -> duoforge.moves.baton_pass",
+   "duoforge.state.pool_g78 -> duoforge.moves.dragon_darts",
+   "duoforge.state.pool_g79 -> duoforge.abilities.cloud_nine",
+   "duoforge.state.pool_g81 -> duoforge.abilities.frisk",
+   "duoforge.state.pool_g82 -> duoforge.moves.healing_wish",
+   "duoforge.state.pool_g87 -> duoforge.moves.attract_source_view",
+   "duoforge.state.pool_g88 -> duoforge.moves.turn_history_moves",
+   "duoforge.state.pool_g9 -> duoforge.moves.encore",
+   "duoforge.state.pool_g90 -> duoforge.moves.partial_trap",
+   "duoforge.state.pool_g92 -> duoforge.moves.confusion_moves",
+   "duoforge.state.pool_i2 -> duoforge.interactions.illusion",
+   "duoforge.state.pool_k1 -> duoforge.moves.temper_flare",
+   "duoforge.state.pool_k2 -> duoforge.abilities.piercing_drill",
+   "duoforge.state.pool_k3 -> duoforge.moves.speed_swap",
+   "duoforge.state.pool_k4_draws -> duoforge.interactions.gravity_accuracy_draws",
+   "duoforge.state.pool_lockfam_sleep -> duoforge.moves.lockedmove_sleep",
+   "duoforge.state.pool_terrain -> duoforge.mechanics.electric_misty_terrain",
+   "duoforge.state.pool_weather -> duoforge.mechanics.sand_snow_weather"
+  ],
+  "ipo": [
+   "duoforge.state.pool_ac1 -> duoforge.abilities.trace",
+   "duoforge.state.pool_g11 -> duoforge.moves.soak",
+   "duoforge.state.pool_g16 -> duoforge.items.knock_off",
+   "duoforge.state.pool_g17 -> duoforge.moves.recharge",
+   "duoforge.state.pool_g19 -> duoforge.moves.glaive_rush_tail_view",
+   "duoforge.state.pool_g20 -> duoforge.mechanics.aurora_veil",
+   "duoforge.state.pool_g20_protect -> duoforge.mechanics.spiky_shield",
+   "duoforge.state.pool_g26 -> duoforge.moves.perish_song",
+   "duoforge.state.pool_g27 -> duoforge.interactions.cursed_body_disable",
+   "duoforge.state.pool_g29 -> duoforge.items.item_transfer",
+   "duoforge.state.pool_g31 -> duoforge.moves.taunt_yawn_tail_view",
+   "duoforge.state.pool_g36 -> duoforge.mechanics.toxic",
+   "duoforge.state.pool_g37 -> duoforge.mechanics.entry_hazards",
+   "duoforge.state.pool_g38 -> duoforge.moves.imprison",
+   "duoforge.state.pool_g41 -> duoforge.abilities.shadow_tag",
+   "duoforge.state.pool_g42 -> duoforge.moves.move_result_roost",
+   "duoforge.state.pool_g46_party -> duoforge.flow.party_order",
+   "duoforge.state.pool_g47 -> duoforge.interactions.status_cures",
+   "duoforge.state.pool_g50 -> duoforge.moves.double_shock",
+   "duoforge.state.pool_g52 -> duoforge.interactions.revival_blessing_view",
+   "duoforge.state.pool_g53 -> duoforge.abilities.pressure",
+   "duoforge.state.pool_g55 -> duoforge.items.duration_items",
+   "duoforge.state.pool_g56 -> duoforge.moves.outrage_lock",
+   "duoforge.state.pool_g57 -> duoforge.abilities.magic_bounce",
+   "duoforge.state.pool_g58 -> duoforge.moves.phantom_force",
+   "duoforge.state.pool_g60 -> duoforge.moves.substitute",
+   "duoforge.state.pool_g61 -> duoforge.abilities.sheer_force",
+   "duoforge.state.pool_g62 -> duoforge.moves.haze",
+   "duoforge.state.pool_g64 -> duoforge.moves.moves_batch_2_rows",
+   "duoforge.state.pool_g66 -> duoforge.forms.stance_change",
+   "duoforge.state.pool_g68 -> duoforge.moves.moves_batch_4_rows",
+   "duoforge.state.pool_g69 -> duoforge.abilities.symbiosis",
+   "duoforge.state.pool_g7 -> duoforge.mechanics.wide_guard",
+   "duoforge.state.pool_g70 -> duoforge.moves.skill_swap",
+   "duoforge.state.pool_g71 -> duoforge.moves.attract",
+   "duoforge.state.pool_g72 -> duoforge.mechanics.yawn_exemptions",
+   "duoforge.state.pool_g73 -> duoforge.abilities.moody",
+   "duoforge.state.pool_g74 -> duoforge.moves.baton_pass",
+   "duoforge.state.pool_g78 -> duoforge.moves.dragon_darts",
+   "duoforge.state.pool_g79 -> duoforge.abilities.cloud_nine",
+   "duoforge.state.pool_g81 -> duoforge.abilities.frisk",
+   "duoforge.state.pool_g82 -> duoforge.moves.healing_wish",
+   "duoforge.state.pool_g87 -> duoforge.moves.attract_source_view",
+   "duoforge.state.pool_g88 -> duoforge.moves.turn_history_moves",
+   "duoforge.state.pool_g9 -> duoforge.moves.encore",
+   "duoforge.state.pool_g90 -> duoforge.moves.partial_trap",
+   "duoforge.state.pool_g92 -> duoforge.moves.confusion_moves",
+   "duoforge.state.pool_i2 -> duoforge.interactions.illusion",
+   "duoforge.state.pool_k1 -> duoforge.moves.temper_flare",
+   "duoforge.state.pool_k2 -> duoforge.abilities.piercing_drill",
+   "duoforge.state.pool_k3 -> duoforge.moves.speed_swap",
+   "duoforge.state.pool_k4_draws -> duoforge.interactions.gravity_accuracy_draws",
+   "duoforge.state.pool_lockfam_sleep -> duoforge.moves.lockedmove_sleep",
+   "duoforge.state.pool_terrain -> duoforge.mechanics.electric_misty_terrain",
+   "duoforge.state.pool_weather -> duoforge.mechanics.sand_snow_weather"
+  ],
+  "noipo": [
+   "duoforge.state.pool_ac1 -> duoforge.abilities.trace",
+   "duoforge.state.pool_g11 -> duoforge.moves.soak",
+   "duoforge.state.pool_g16 -> duoforge.items.knock_off",
+   "duoforge.state.pool_g17 -> duoforge.moves.recharge",
+   "duoforge.state.pool_g19 -> duoforge.moves.glaive_rush_tail_view",
+   "duoforge.state.pool_g20 -> duoforge.mechanics.aurora_veil",
+   "duoforge.state.pool_g20_protect -> duoforge.mechanics.spiky_shield",
+   "duoforge.state.pool_g26 -> duoforge.moves.perish_song",
+   "duoforge.state.pool_g27 -> duoforge.interactions.cursed_body_disable",
+   "duoforge.state.pool_g29 -> duoforge.items.item_transfer",
+   "duoforge.state.pool_g31 -> duoforge.moves.taunt_yawn_tail_view",
+   "duoforge.state.pool_g36 -> duoforge.mechanics.toxic",
+   "duoforge.state.pool_g37 -> duoforge.mechanics.entry_hazards",
+   "duoforge.state.pool_g38 -> duoforge.moves.imprison",
+   "duoforge.state.pool_g41 -> duoforge.abilities.shadow_tag",
+   "duoforge.state.pool_g42 -> duoforge.moves.move_result_roost",
+   "duoforge.state.pool_g46_party -> duoforge.flow.party_order",
+   "duoforge.state.pool_g47 -> duoforge.interactions.status_cures",
+   "duoforge.state.pool_g50 -> duoforge.moves.double_shock",
+   "duoforge.state.pool_g52 -> duoforge.interactions.revival_blessing_view",
+   "duoforge.state.pool_g53 -> duoforge.abilities.pressure",
+   "duoforge.state.pool_g55 -> duoforge.items.duration_items",
+   "duoforge.state.pool_g56 -> duoforge.moves.outrage_lock",
+   "duoforge.state.pool_g57 -> duoforge.abilities.magic_bounce",
+   "duoforge.state.pool_g58 -> duoforge.moves.phantom_force",
+   "duoforge.state.pool_g60 -> duoforge.moves.substitute",
+   "duoforge.state.pool_g61 -> duoforge.abilities.sheer_force",
+   "duoforge.state.pool_g62 -> duoforge.moves.haze",
+   "duoforge.state.pool_g64 -> duoforge.moves.moves_batch_2_rows",
+   "duoforge.state.pool_g66 -> duoforge.forms.stance_change",
+   "duoforge.state.pool_g68 -> duoforge.moves.moves_batch_4_rows",
+   "duoforge.state.pool_g69 -> duoforge.abilities.symbiosis",
+   "duoforge.state.pool_g7 -> duoforge.mechanics.wide_guard",
+   "duoforge.state.pool_g70 -> duoforge.moves.skill_swap",
+   "duoforge.state.pool_g71 -> duoforge.moves.attract",
+   "duoforge.state.pool_g72 -> duoforge.mechanics.yawn_exemptions",
+   "duoforge.state.pool_g73 -> duoforge.abilities.moody",
+   "duoforge.state.pool_g74 -> duoforge.moves.baton_pass",
+   "duoforge.state.pool_g78 -> duoforge.moves.dragon_darts",
+   "duoforge.state.pool_g79 -> duoforge.abilities.cloud_nine",
+   "duoforge.state.pool_g81 -> duoforge.abilities.frisk",
+   "duoforge.state.pool_g82 -> duoforge.moves.healing_wish",
+   "duoforge.state.pool_g87 -> duoforge.moves.attract_source_view",
+   "duoforge.state.pool_g88 -> duoforge.moves.turn_history_moves",
+   "duoforge.state.pool_g9 -> duoforge.moves.encore",
+   "duoforge.state.pool_g90 -> duoforge.moves.partial_trap",
+   "duoforge.state.pool_g92 -> duoforge.moves.confusion_moves",
+   "duoforge.state.pool_i2 -> duoforge.interactions.illusion",
+   "duoforge.state.pool_k1 -> duoforge.moves.temper_flare",
+   "duoforge.state.pool_k2 -> duoforge.abilities.piercing_drill",
+   "duoforge.state.pool_k3 -> duoforge.moves.speed_swap",
+   "duoforge.state.pool_k4_draws -> duoforge.interactions.gravity_accuracy_draws",
+   "duoforge.state.pool_lockfam_sleep -> duoforge.moves.lockedmove_sleep",
+   "duoforge.state.pool_terrain -> duoforge.mechanics.electric_misty_terrain",
+   "duoforge.state.pool_weather -> duoforge.mechanics.sand_snow_weather"
+  ]
+ },
+ "P1_selected_tests": {
+  "after-ipo": {
+   "names_sha256": "0513f61d6e612f4ab937a116acbe786312a64244778656db61848d2df7ef9160",
+   "passed": 324,
+   "tests": 324
+  },
+  "after-noipo": {
+   "names_sha256": "e622f2fb74e87a684f83c574c7a68870871df29cbf87cb59602e025c9f316956",
+   "passed": 319,
+   "tests": 319
+  },
+  "before-ipo": {
+   "names_sha256": "90ff4f942982ba29154f892c504b94ae8f27cd85827cabdbe8075820e4e75cc3",
+   "passed": 313,
+   "tests": 313
+  },
+  "before-noipo": {
+   "names_sha256": "3a9facaed69bab68abd80affeef41d819eff475b31031548448f49490e5cf321",
+   "passed": 308,
+   "tests": 308
+  }
+ },
+ "P1_split": {
+  "debug": {
+   "duoforge.state.pool_a2a": [
+    "duoforge.abilities.one_clause_abilities",
+    "duoforge.abilities.flower_veil_drop_refusals",
+    "duoforge.abilities.tangled_feet",
+    "duoforge.abilities.life_dew_water_absorb",
+    "duoforge.abilities.natural_cure"
+   ],
+   "duoforge.state.pool_g22": [
+    "duoforge.abilities.swift_swim_fainted_holder",
+    "duoforge.abilities.inner_focus_intimidate_cap"
+   ],
+   "duoforge.state.pool_g30": [
+    "duoforge.interactions.rage_powder_batch_rows",
+    "duoforge.moves.rage_powder_view"
+   ],
+   "duoforge.state.pool_g33": [
+    "duoforge.interactions.multi_hit_mirror_armor_rows",
+    "duoforge.interactions.multiaccuracy_later_hits"
+   ],
+   "duoforge.state.pool_g34": [
+    "duoforge.interactions.small_rules_rows",
+    "duoforge.interactions.modify_damage_chain_order"
+   ],
+   "duoforge.state.pool_g35": [
+    "duoforge.interactions.rain_dish_friend_guard_rows",
+    "duoforge.interactions.friend_guard_chain_order"
+   ],
+   "duoforge.state.pool_g39": [
+    "duoforge.interactions.thirteen_abilities_rows",
+    "duoforge.abilities.damp_sturdy_rows",
+    "duoforge.interactions.hyper_cutter_flower_veil"
+   ],
+   "duoforge.state.pool_g43": [
+    "duoforge.forms.mega_stones"
+   ],
+   "duoforge.state.pool_g44": [
+    "duoforge.moves.simple_move_rows",
+    "duoforge.moves.power_trip",
+    "duoforge.moves.tri_attack"
+   ],
+   "duoforge.state.pool_g45": [
+    "duoforge.abilities.simple_ability_rows",
+    "duoforge.abilities.steadfast",
+    "duoforge.abilities.moxie",
+    "duoforge.abilities.weak_armor",
+    "duoforge.abilities.telepathy",
+    "duoforge.abilities.volt_absorb"
+   ],
+   "duoforge.state.pool_g48": [
+    "duoforge.moves.hits_taken_hazard_moves",
+    "duoforge.moves.rage_fist"
+   ],
+   "duoforge.state.pool_g49": [
+    "duoforge.items.power_and_accuracy_items",
+    "duoforge.items.bright_powder"
+   ],
+   "duoforge.state.pool_g51": [
+    "duoforge.forms.mega_stones",
+    "duoforge.abilities.keen_eye",
+    "duoforge.abilities.regenerator_pivot"
+   ],
+   "duoforge.state.pool_g54": [
+    "duoforge.moves.moves_batch_rows",
+    "duoforge.moves.multi_hit_count",
+    "duoforge.moves.quick_guard_view"
+   ],
+   "duoforge.state.pool_g59": [
+    "duoforge.forms.mega_stones",
+    "duoforge.abilities.mega_launcher",
+    "duoforge.abilities.mega_sol"
+   ],
+   "duoforge.state.pool_g63": [
+    "duoforge.abilities.simple_mega_abilities",
+    "duoforge.abilities.stalwart",
+    "duoforge.forms.mega_stones"
+   ],
+   "duoforge.state.pool_g65": [
+    "duoforge.abilities.modifier_abilities",
+    "duoforge.abilities.reckless",
+    "duoforge.abilities.trace_water_bubble"
+   ],
+   "duoforge.state.pool_g67": [
+    "duoforge.interactions.magic_guard_air_balloon",
+    "duoforge.mechanics.item_shown_fold"
+   ],
+   "duoforge.state.pool_g72b": [
+    "duoforge.moves.alluring_voice_dragon_cheer_rows",
+    "duoforge.moves.alluring_voice",
+    "duoforge.moves.dragon_cheer"
+   ],
+   "duoforge.state.pool_g76": [
+    "duoforge.moves.destiny_bond_final_gambit_rows",
+    "duoforge.moves.destiny_bond",
+    "duoforge.moves.final_gambit"
+   ],
+   "duoforge.state.pool_g77": [
+    "duoforge.interactions.crit_package_rows",
+    "duoforge.interactions.modify_damage_bound",
+    "duoforge.interactions.sniper_chain_order",
+    "duoforge.interactions.magma_armor_frozen_refusals"
+   ],
+   "duoforge.state.pool_g8": [
+    "duoforge.moves.throat_chop",
+    "duoforge.moves.heal_block",
+    "duoforge.moves.switch_clears_volatiles",
+    "duoforge.moves.throat_chop_heal_block_view"
+   ],
+   "duoforge.state.pool_g80": [
+    "duoforge.moves.psych_up_howl_ally_switch_rows",
+    "duoforge.moves.ally_switch",
+    "duoforge.abilities.stalwart_random_move"
+   ],
+   "duoforge.state.pool_g83": [
+    "duoforge.interactions.bulletproof_rivalry_leaf_guard_iron_ball",
+    "duoforge.interactions.leaf_guard_mega_sol_refusal"
+   ],
+   "duoforge.state.pool_g86": [
+    "duoforge.moves.power_move_rows",
+    "duoforge.moves.heavy_slam",
+    "duoforge.moves.hard_press"
+   ],
+   "duoforge.state.pool_mega2": [
+    "duoforge.forms.mega_stones",
+    "duoforge.abilities.aura_guard"
+   ]
+  },
+  "ipo": {
+   "duoforge.state.pool_a2a": [
+    "duoforge.abilities.one_clause_abilities",
+    "duoforge.abilities.flower_veil_drop_refusals",
+    "duoforge.abilities.tangled_feet",
+    "duoforge.abilities.life_dew_water_absorb",
+    "duoforge.abilities.natural_cure"
+   ],
+   "duoforge.state.pool_g22": [
+    "duoforge.abilities.swift_swim_fainted_holder",
+    "duoforge.abilities.inner_focus_intimidate_cap"
+   ],
+   "duoforge.state.pool_g30": [
+    "duoforge.interactions.rage_powder_batch_rows",
+    "duoforge.moves.rage_powder_view"
+   ],
+   "duoforge.state.pool_g33": [
+    "duoforge.interactions.multi_hit_mirror_armor_rows",
+    "duoforge.interactions.multiaccuracy_later_hits"
+   ],
+   "duoforge.state.pool_g34": [
+    "duoforge.interactions.small_rules_rows",
+    "duoforge.interactions.modify_damage_chain_order"
+   ],
+   "duoforge.state.pool_g35": [
+    "duoforge.interactions.rain_dish_friend_guard_rows",
+    "duoforge.interactions.friend_guard_chain_order"
+   ],
+   "duoforge.state.pool_g39": [
+    "duoforge.interactions.thirteen_abilities_rows",
+    "duoforge.abilities.damp_sturdy_rows",
+    "duoforge.interactions.hyper_cutter_flower_veil"
+   ],
+   "duoforge.state.pool_g43": [
+    "duoforge.forms.mega_stones"
+   ],
+   "duoforge.state.pool_g44": [
+    "duoforge.moves.simple_move_rows",
+    "duoforge.moves.power_trip",
+    "duoforge.moves.tri_attack"
+   ],
+   "duoforge.state.pool_g45": [
+    "duoforge.abilities.simple_ability_rows",
+    "duoforge.abilities.steadfast",
+    "duoforge.abilities.moxie",
+    "duoforge.abilities.weak_armor",
+    "duoforge.abilities.telepathy",
+    "duoforge.abilities.volt_absorb"
+   ],
+   "duoforge.state.pool_g48": [
+    "duoforge.moves.hits_taken_hazard_moves",
+    "duoforge.moves.rage_fist"
+   ],
+   "duoforge.state.pool_g49": [
+    "duoforge.items.power_and_accuracy_items",
+    "duoforge.items.bright_powder"
+   ],
+   "duoforge.state.pool_g51": [
+    "duoforge.forms.mega_stones",
+    "duoforge.abilities.keen_eye",
+    "duoforge.abilities.regenerator_pivot"
+   ],
+   "duoforge.state.pool_g54": [
+    "duoforge.moves.moves_batch_rows",
+    "duoforge.moves.multi_hit_count",
+    "duoforge.moves.quick_guard_view"
+   ],
+   "duoforge.state.pool_g59": [
+    "duoforge.forms.mega_stones",
+    "duoforge.abilities.mega_launcher",
+    "duoforge.abilities.mega_sol"
+   ],
+   "duoforge.state.pool_g63": [
+    "duoforge.abilities.simple_mega_abilities",
+    "duoforge.abilities.stalwart",
+    "duoforge.forms.mega_stones"
+   ],
+   "duoforge.state.pool_g65": [
+    "duoforge.abilities.modifier_abilities",
+    "duoforge.abilities.reckless",
+    "duoforge.abilities.trace_water_bubble"
+   ],
+   "duoforge.state.pool_g67": [
+    "duoforge.interactions.magic_guard_air_balloon",
+    "duoforge.mechanics.item_shown_fold"
+   ],
+   "duoforge.state.pool_g72b": [
+    "duoforge.moves.alluring_voice_dragon_cheer_rows",
+    "duoforge.moves.alluring_voice",
+    "duoforge.moves.dragon_cheer"
+   ],
+   "duoforge.state.pool_g76": [
+    "duoforge.moves.destiny_bond_final_gambit_rows",
+    "duoforge.moves.destiny_bond",
+    "duoforge.moves.final_gambit"
+   ],
+   "duoforge.state.pool_g77": [
+    "duoforge.interactions.crit_package_rows",
+    "duoforge.interactions.modify_damage_bound",
+    "duoforge.interactions.sniper_chain_order",
+    "duoforge.interactions.magma_armor_frozen_refusals"
+   ],
+   "duoforge.state.pool_g8": [
+    "duoforge.moves.throat_chop",
+    "duoforge.moves.heal_block",
+    "duoforge.moves.switch_clears_volatiles",
+    "duoforge.moves.throat_chop_heal_block_view"
+   ],
+   "duoforge.state.pool_g80": [
+    "duoforge.moves.psych_up_howl_ally_switch_rows",
+    "duoforge.moves.ally_switch",
+    "duoforge.abilities.stalwart_random_move"
+   ],
+   "duoforge.state.pool_g83": [
+    "duoforge.interactions.bulletproof_rivalry_leaf_guard_iron_ball",
+    "duoforge.interactions.leaf_guard_mega_sol_refusal"
+   ],
+   "duoforge.state.pool_g86": [
+    "duoforge.moves.power_move_rows",
+    "duoforge.moves.heavy_slam",
+    "duoforge.moves.hard_press"
+   ],
+   "duoforge.state.pool_mega2": [
+    "duoforge.forms.mega_stones",
+    "duoforge.abilities.aura_guard"
+   ]
+  },
+  "noipo": {
+   "duoforge.state.pool_a2a": [
+    "duoforge.abilities.one_clause_abilities",
+    "duoforge.abilities.flower_veil_drop_refusals",
+    "duoforge.abilities.tangled_feet",
+    "duoforge.abilities.life_dew_water_absorb",
+    "duoforge.abilities.natural_cure"
+   ],
+   "duoforge.state.pool_g22": [
+    "duoforge.abilities.swift_swim_fainted_holder",
+    "duoforge.abilities.inner_focus_intimidate_cap"
+   ],
+   "duoforge.state.pool_g30": [
+    "duoforge.interactions.rage_powder_batch_rows",
+    "duoforge.moves.rage_powder_view"
+   ],
+   "duoforge.state.pool_g33": [
+    "duoforge.interactions.multi_hit_mirror_armor_rows",
+    "duoforge.interactions.multiaccuracy_later_hits"
+   ],
+   "duoforge.state.pool_g34": [
+    "duoforge.interactions.small_rules_rows",
+    "duoforge.interactions.modify_damage_chain_order"
+   ],
+   "duoforge.state.pool_g35": [
+    "duoforge.interactions.rain_dish_friend_guard_rows",
+    "duoforge.interactions.friend_guard_chain_order"
+   ],
+   "duoforge.state.pool_g39": [
+    "duoforge.interactions.thirteen_abilities_rows",
+    "duoforge.abilities.damp_sturdy_rows",
+    "duoforge.interactions.hyper_cutter_flower_veil"
+   ],
+   "duoforge.state.pool_g43": [
+    "duoforge.forms.mega_stones"
+   ],
+   "duoforge.state.pool_g44": [
+    "duoforge.moves.simple_move_rows",
+    "duoforge.moves.power_trip",
+    "duoforge.moves.tri_attack"
+   ],
+   "duoforge.state.pool_g45": [
+    "duoforge.abilities.simple_ability_rows",
+    "duoforge.abilities.steadfast",
+    "duoforge.abilities.moxie",
+    "duoforge.abilities.weak_armor",
+    "duoforge.abilities.telepathy",
+    "duoforge.abilities.volt_absorb"
+   ],
+   "duoforge.state.pool_g48": [
+    "duoforge.moves.hits_taken_hazard_moves",
+    "duoforge.moves.rage_fist"
+   ],
+   "duoforge.state.pool_g49": [
+    "duoforge.items.power_and_accuracy_items",
+    "duoforge.items.bright_powder"
+   ],
+   "duoforge.state.pool_g51": [
+    "duoforge.forms.mega_stones",
+    "duoforge.abilities.keen_eye",
+    "duoforge.abilities.regenerator_pivot"
+   ],
+   "duoforge.state.pool_g54": [
+    "duoforge.moves.moves_batch_rows",
+    "duoforge.moves.multi_hit_count",
+    "duoforge.moves.quick_guard_view"
+   ],
+   "duoforge.state.pool_g59": [
+    "duoforge.forms.mega_stones",
+    "duoforge.abilities.mega_launcher",
+    "duoforge.abilities.mega_sol"
+   ],
+   "duoforge.state.pool_g63": [
+    "duoforge.abilities.simple_mega_abilities",
+    "duoforge.abilities.stalwart",
+    "duoforge.forms.mega_stones"
+   ],
+   "duoforge.state.pool_g65": [
+    "duoforge.abilities.modifier_abilities",
+    "duoforge.abilities.reckless",
+    "duoforge.abilities.trace_water_bubble"
+   ],
+   "duoforge.state.pool_g67": [
+    "duoforge.interactions.magic_guard_air_balloon",
+    "duoforge.mechanics.item_shown_fold"
+   ],
+   "duoforge.state.pool_g72b": [
+    "duoforge.moves.alluring_voice_dragon_cheer_rows",
+    "duoforge.moves.alluring_voice",
+    "duoforge.moves.dragon_cheer"
+   ],
+   "duoforge.state.pool_g76": [
+    "duoforge.moves.destiny_bond_final_gambit_rows",
+    "duoforge.moves.destiny_bond",
+    "duoforge.moves.final_gambit"
+   ],
+   "duoforge.state.pool_g77": [
+    "duoforge.interactions.crit_package_rows",
+    "duoforge.interactions.modify_damage_bound",
+    "duoforge.interactions.sniper_chain_order",
+    "duoforge.interactions.magma_armor_frozen_refusals"
+   ],
+   "duoforge.state.pool_g8": [
+    "duoforge.moves.throat_chop",
+    "duoforge.moves.heal_block",
+    "duoforge.moves.switch_clears_volatiles",
+    "duoforge.moves.throat_chop_heal_block_view"
+   ],
+   "duoforge.state.pool_g80": [
+    "duoforge.moves.psych_up_howl_ally_switch_rows",
+    "duoforge.moves.ally_switch",
+    "duoforge.abilities.stalwart_random_move"
+   ],
+   "duoforge.state.pool_g83": [
+    "duoforge.interactions.bulletproof_rivalry_leaf_guard_iron_ball",
+    "duoforge.interactions.leaf_guard_mega_sol_refusal"
+   ],
+   "duoforge.state.pool_g86": [
+    "duoforge.moves.power_move_rows",
+    "duoforge.moves.heavy_slam",
+    "duoforge.moves.hard_press"
+   ],
+   "duoforge.state.pool_mega2": [
+    "duoforge.forms.mega_stones",
+    "duoforge.abilities.aura_guard"
+   ]
+  }
+ },
+ "P2_reference": {
+  "checks": {
+   "duoforge_reference_conformance": "duoforge.reference.conformance: 3042 checks, 0 failures",
+   "duoforge_reference_conformance_pool": "duoforge.reference.conformance_pool: 3042 checks, 0 failures",
+   "duoforge_reference_conformance_pool_data": "duoforge.reference.conformance_pool_data: 15834 checks, 0 failures",
+   "duoforge_reference_conformance_team_c": "duoforge.reference.conformance_team_c: 2967 checks, 0 failures",
+   "duoforge_reference_conformance_team_c_pool": "duoforge.reference.conformance_team_c_pool: 2967 checks, 0 failures",
+   "duoforge_reference_tiebreak": "duoforge.reference.tiebreak: 4293 checks, 0 failures",
+   "duoforge_reference_tiebreak_pool": "duoforge.reference.tiebreak_pool: 4293 checks, 0 failures",
+   "duoforge_reference_tiebreak_pool_data": "duoforge.reference.tiebreak_pool_data: 29546 checks, 0 failures",
+   "duoforge_reference_tiebreak_team_c": "duoforge.reference.tiebreak_team_c: 3835 checks, 0 failures",
+   "duoforge_reference_tiebreak_team_c_pool": "duoforge.reference.tiebreak_team_c_pool: 3835 checks, 0 failures"
+  },
+  "executions": 2818,
+  "ipo": {
+   "equal": true,
+   "sha256": "6877987c6147b729202a89ca98eea60c1d8e2cfb7990217ebf1eed2aed824b5c"
+  },
+  "native_reports_equal": {
+   "debug": true,
+   "ipo": true,
+   "noipo": true
+  },
+  "noipo": {
+   "equal": true,
+   "sha256": "6877987c6147b729202a89ca98eea60c1d8e2cfb7990217ebf1eed2aed824b5c"
+  },
+  "steps": 24734,
+  "stops": 9260,
+  "unique_battles": 1246,
+  "variants": 10
+ },
+ "P3_perft_pins_sha256": "84c744369b4fdc0705d4a2c7f4c08d5df2cbc78fb53ef2898bca3edb2192ddcb",
+ "P3_perft_pins_unchanged": true,
+ "P4_bench_sha256_unchanged": true,
+ "P5_fingerprints": {
+  "debug": {
+   "CLOSURE": "09d8d247c926610b2c3957002644221c01cc07d268bfa98461575c3b1c6a8306",
+   "POOL": "c4d08f843b984a18316aaf683ab3c968b391988ca4dad76ea06c0868e56abfeb",
+   "TEAM_C": "520eca894c0c40b6fa6f316fa2c654c1f32a1bf69d58d63f929921d3911f047f"
+  },
+  "ipo": {
+   "CLOSURE": "09d8d247c926610b2c3957002644221c01cc07d268bfa98461575c3b1c6a8306",
+   "POOL": "c4d08f843b984a18316aaf683ab3c968b391988ca4dad76ea06c0868e56abfeb",
+   "TEAM_C": "520eca894c0c40b6fa6f316fa2c654c1f32a1bf69d58d63f929921d3911f047f"
+  },
+  "noipo": {
+   "CLOSURE": "09d8d247c926610b2c3957002644221c01cc07d268bfa98461575c3b1c6a8306",
+   "POOL": "c4d08f843b984a18316aaf683ab3c968b391988ca4dad76ea06c0868e56abfeb",
+   "TEAM_C": "520eca894c0c40b6fa6f316fa2c654c1f32a1bf69d58d63f929921d3911f047f"
+  }
+ },
+ "P5_fingerprints_equal": true,
+ "P5_generated_unchanged": false,
+ "P6_public_surface": {
+  "debug": {
+   "equal": true,
+   "exports": 249,
+   "exports_sha256": "75a403d650869a25c70376009090662604c82396542ff78a90031e364abb7ce2",
+   "layout_sha256": "37b8f5e15c52966d3b7cff0f3f175e047e2f1d2dfec15c9e9a7cd27fa6308774"
+  },
+  "include_diff_empty": true,
+  "ipo": {
+   "equal": true,
+   "exports": 249,
+   "exports_sha256": "75a403d650869a25c70376009090662604c82396542ff78a90031e364abb7ce2",
+   "layout_sha256": "37b8f5e15c52966d3b7cff0f3f175e047e2f1d2dfec15c9e9a7cd27fa6308774"
+  },
+  "noipo": {
+   "equal": true,
+   "exports": 249,
+   "exports_sha256": "75a403d650869a25c70376009090662604c82396542ff78a90031e364abb7ce2",
+   "layout_sha256": "37b8f5e15c52966d3b7cff0f3f175e047e2f1d2dfec15c9e9a7cd27fa6308774"
+  }
+ },
+ "after": {
+  "commit": "94d88feba84ef6824b189b070c00d8c91111390c",
+  "dirty": false,
+  "phase": "after"
+ },
+ "before": {
+  "commit": "32da809fb2184dce493147652b6cdb133d0b7859",
+  "dirty": false,
+  "phase": "before"
+ },
+ "changed_files": [
+  "docs/benchmarks/2026-10-24-restructure-test-splits-interactions/machine.json",
+  "docs/benchmarks/2026-10-24-restructure-test-splits-interactions/proofs.py",
+  "docs/benchmarks/2026-10-24-restructure-test-splits-interactions/specs/g30.json",
+  "docs/benchmarks/2026-10-24-restructure-test-splits-interactions/specs/g33.json",
+  "docs/benchmarks/2026-10-24-restructure-test-splits-interactions/specs/g34.json",
+  "docs/benchmarks/2026-10-24-restructure-test-splits-interactions/specs/g35.json",
+  "docs/benchmarks/2026-10-24-restructure-test-splits-interactions/specs/g39.json",
+  "docs/benchmarks/2026-10-24-restructure-test-splits-interactions/specs/g67.json",
+  "docs/benchmarks/2026-10-24-restructure-test-splits-interactions/specs/g77.json",
+  "docs/benchmarks/2026-10-24-restructure-test-splits-interactions/specs/g83.json",
+  "docs/benchmarks/2026-10-24-restructure-test-splits-interactions/summarize.py",
+  "docs/mechanics/abilities/5ah-small-batch-thirteen-abilities-four.md",
+  "docs/mechanics/abilities/5bl-magic-guard-air-balloon.md",
+  "docs/mechanics/abilities/5bq-crit-package-magma-armor-anger.md",
+  "docs/mechanics/abilities/5bt-cheap-set-2-iron-ball.md",
+  "docs/mechanics/abilities/5z-ten-data-rows-rain-dish.md",
+  "docs/mechanics/moves/5u-powder-fangs-solar-beam-four.md",
+  "docs/mechanics/moves/5w-small-rules-data-rows.md",
+  "docs/support/README.md",
+  "docs/support/README.template.md",
+  "src/combat/mechanics/damage/modify_damage.h",
+  "src/combat/turn.c",
+  "src/data/support_manifest.c",
+  "tests/abilities/test_damp_sturdy_rows.c",
+  "tests/abilities/tests.cmake",
+  "tests/interactions/test_bulletproof_rivalry_leaf_guard_iron_ball.c",
+  "tests/interactions/test_crit_package_rows.c",
+  "tests/interactions/test_friend_guard_chain_order.c",
+  "tests/interactions/test_hyper_cutter_flower_veil.c",
+  "tests/interactions/test_leaf_guard_mega_sol_refusal.c",
+  "tests/interactions/test_magic_guard_air_balloon.c",
+  "tests/interactions/test_magma_armor_frozen_refusals.c",
+  "tests/interactions/test_modify_damage_bound.c",
+  "tests/interactions/test_modify_damage_chain_order.c",
+  "tests/interactions/test_multi_hit_mirror_armor_rows.c",
+  "tests/interactions/test_multiaccuracy_later_hits.c",
+  "tests/interactions/test_pool_g30.c",
+  "tests/interactions/test_pool_g39.c",
+  "tests/interactions/test_pool_g67.c",
+  "tests/interactions/test_pool_g83.c",
+  "tests/interactions/test_rage_powder_batch_rows.c",
+  "tests/interactions/test_rain_dish_friend_guard_rows.c",
+  "tests/interactions/test_small_rules_rows.c",
+  "tests/interactions/test_sniper_chain_order.c",
+  "tests/interactions/test_thirteen_abilities_rows.c",
+  "tests/interactions/tests.cmake",
+  "tests/mechanics/test_item_shown_fold.c",
+  "tests/mechanics/tests.cmake",
+  "tests/moves/test_rage_powder_view.c",
+  "tests/moves/tests.cmake",
+  "tests/renames.tsv",
+  "tests/support/conformance_compare.c",
+  "tools/datagen/tablegen/abilities.py",
+  "tools/reference/trace_to_c.py"
+ ],
+ "object_identity": {
+  "debug": {
+   "compared": 400,
+   "differing": [
+    "bench/CMakeFiles/duoforge_bench.dir/main.c.o"
+   ],
+   "library_after": "384a60b471e97c6009ef319a29f9713dfc90c6fe6522bbb3b2e0ada9b6892622",
+   "library_before": "384a60b471e97c6009ef319a29f9713dfc90c6fe6522bbb3b2e0ada9b6892622"
+  },
+  "ipo": {
+   "compared": 402,
+   "differing": [
+    "CMakeFiles/_CMakeLTOTest-C/bin/CMakeFiles/boo.dir/main.c.o",
+    "CMakeFiles/_CMakeLTOTest-C/bin/CMakeFiles/foo.dir/foo.c.o",
+    "CMakeFiles/duoforge.dir/src/combat/turn.c.o",
+    "CMakeFiles/duoforge.dir/src/data/support_manifest.c.o",
+    "CMakeFiles/duoforge_shared.dir/src/combat/turn.c.o",
+    "CMakeFiles/duoforge_shared.dir/src/data/support_manifest.c.o",
+    "bench/CMakeFiles/duoforge_bench.dir/main.c.o",
+    "libduoforge.a",
+    "tests/CMakeFiles/duoforge_test_support.dir/support/conformance_compare.c.o"
+   ],
+   "library_after": "6174a9f9586bc98aeb8a4923de490240199daed25cc6c7e6d45d25d4bbe12057",
+   "library_before": "6174a9f9586bc98aeb8a4923de490240199daed25cc6c7e6d45d25d4bbe12057"
+  },
+  "noipo": {
+   "compared": 421,
+   "differing": [
+    "bench/CMakeFiles/duoforge_bench.dir/main.c.o"
+   ],
+   "library_after": "96a5b7ea4ed8a6503d11cef860f1fb405c450b80cd9f8cd223760674b93eb237",
+   "library_before": "96a5b7ea4ed8a6503d11cef860f1fb405c450b80cd9f8cd223760674b93eb237"
+  }
+ },
+ "split_checks": {
+  "ipo": {
+   "after": {
+    "duoforge.abilities.aura_guard": 203,
+    "duoforge.abilities.damp_sturdy_rows": 11,
+    "duoforge.abilities.flower_veil_drop_refusals": 27,
+    "duoforge.abilities.inner_focus_intimidate_cap": 52,
+    "duoforge.abilities.keen_eye": 23,
+    "duoforge.abilities.life_dew_water_absorb": 25,
+    "duoforge.abilities.mega_launcher": 5,
+    "duoforge.abilities.mega_sol": 7,
+    "duoforge.abilities.modifier_abilities": 17,
+    "duoforge.abilities.moxie": 7,
+    "duoforge.abilities.natural_cure": 13,
+    "duoforge.abilities.one_clause_abilities": 420,
+    "duoforge.abilities.reckless": 9,
+    "duoforge.abilities.regenerator_pivot": 22,
+    "duoforge.abilities.simple_ability_rows": 13,
+    "duoforge.abilities.simple_mega_abilities": 16,
+    "duoforge.abilities.stalwart": 372,
+    "duoforge.abilities.stalwart_random_move": 5,
+    "duoforge.abilities.steadfast": 6,
+    "duoforge.abilities.swift_swim_fainted_holder": 38,
+    "duoforge.abilities.tangled_feet": 29,
+    "duoforge.abilities.telepathy": 6,
+    "duoforge.abilities.trace_water_bubble": 11,
+    "duoforge.abilities.volt_absorb": 18,
+    "duoforge.abilities.weak_armor": 6,
+    "duoforge.forms.mega_stones": 603,
+    "duoforge.interactions.bulletproof_rivalry_leaf_guard_iron_ball": 47,
+    "duoforge.interactions.crit_package_rows": 14,
+    "duoforge.interactions.friend_guard_chain_order": 155,
+    "duoforge.interactions.hyper_cutter_flower_veil": 5,
+    "duoforge.interactions.leaf_guard_mega_sol_refusal": 92,
+    "duoforge.interactions.magic_guard_air_balloon": 182,
+    "duoforge.interactions.magma_armor_frozen_refusals": 18,
+    "duoforge.interactions.modify_damage_bound": 11,
+    "duoforge.interactions.modify_damage_chain_order": 84,
+    "duoforge.interactions.multi_hit_mirror_armor_rows": 10,
+    "duoforge.interactions.multiaccuracy_later_hits": 19,
+    "duoforge.interactions.rage_powder_batch_rows": 1785,
+    "duoforge.interactions.rain_dish_friend_guard_rows": 36,
+    "duoforge.interactions.small_rules_rows": 1078,
+    "duoforge.interactions.sniper_chain_order": 3,
+    "duoforge.interactions.thirteen_abilities_rows": 42,
+    "duoforge.items.bright_powder": 38,
+    "duoforge.items.power_and_accuracy_items": 21,
+    "duoforge.mechanics.item_shown_fold": 8,
+    "duoforge.moves.alluring_voice": 41,
+    "duoforge.moves.alluring_voice_dragon_cheer_rows": 10,
+    "duoforge.moves.ally_switch": 159,
+    "duoforge.moves.destiny_bond": 29,
+    "duoforge.moves.destiny_bond_final_gambit_rows": 13,
+    "duoforge.moves.dragon_cheer": 48,
+    "duoforge.moves.final_gambit": 14,
+    "duoforge.moves.hard_press": 12,
+    "duoforge.moves.heal_block": 291,
+    "duoforge.moves.heavy_slam": 11,
+    "duoforge.moves.hits_taken_hazard_moves": 271,
+    "duoforge.moves.moves_batch_rows": 46,
+    "duoforge.moves.multi_hit_count": 25,
+    "duoforge.moves.power_move_rows": 20,
+    "duoforge.moves.power_trip": 12,
+    "duoforge.moves.psych_up_howl_ally_switch_rows": 20,
+    "duoforge.moves.quick_guard_view": 10,
+    "duoforge.moves.rage_fist": 21,
+    "duoforge.moves.rage_powder_view": 1305,
+    "duoforge.moves.simple_move_rows": 74,
+    "duoforge.moves.switch_clears_volatiles": 13,
+    "duoforge.moves.throat_chop": 49,
+    "duoforge.moves.throat_chop_heal_block_view": 299,
+    "duoforge.moves.tri_attack": 4
+   },
+   "before": {
+    "duoforge.state.pool_g30": 3090,
+    "duoforge.state.pool_g33": 29,
+    "duoforge.state.pool_g34": 1162,
+    "duoforge.state.pool_g35": 191,
+    "duoforge.state.pool_g39": 58,
+    "duoforge.state.pool_g67": 190,
+    "duoforge.state.pool_g77": 46,
+    "duoforge.state.pool_g83": 139
+   }
+  },
+  "noipo": {
+   "after": {
+    "duoforge.abilities.aura_guard": 203,
+    "duoforge.abilities.damp_sturdy_rows": 11,
+    "duoforge.abilities.flower_veil_drop_refusals": 27,
+    "duoforge.abilities.inner_focus_intimidate_cap": 52,
+    "duoforge.abilities.keen_eye": 23,
+    "duoforge.abilities.life_dew_water_absorb": 25,
+    "duoforge.abilities.mega_launcher": 5,
+    "duoforge.abilities.mega_sol": 7,
+    "duoforge.abilities.modifier_abilities": 17,
+    "duoforge.abilities.moxie": 7,
+    "duoforge.abilities.natural_cure": 13,
+    "duoforge.abilities.one_clause_abilities": 420,
+    "duoforge.abilities.reckless": 9,
+    "duoforge.abilities.regenerator_pivot": 22,
+    "duoforge.abilities.simple_ability_rows": 13,
+    "duoforge.abilities.simple_mega_abilities": 16,
+    "duoforge.abilities.stalwart": 372,
+    "duoforge.abilities.stalwart_random_move": 5,
+    "duoforge.abilities.steadfast": 6,
+    "duoforge.abilities.swift_swim_fainted_holder": 38,
+    "duoforge.abilities.tangled_feet": 29,
+    "duoforge.abilities.telepathy": 6,
+    "duoforge.abilities.trace_water_bubble": 11,
+    "duoforge.abilities.volt_absorb": 18,
+    "duoforge.abilities.weak_armor": 6,
+    "duoforge.forms.mega_stones": 603,
+    "duoforge.interactions.bulletproof_rivalry_leaf_guard_iron_ball": 47,
+    "duoforge.interactions.crit_package_rows": 14,
+    "duoforge.interactions.friend_guard_chain_order": 155,
+    "duoforge.interactions.hyper_cutter_flower_veil": 5,
+    "duoforge.interactions.leaf_guard_mega_sol_refusal": 92,
+    "duoforge.interactions.magic_guard_air_balloon": 182,
+    "duoforge.interactions.magma_armor_frozen_refusals": 18,
+    "duoforge.interactions.modify_damage_bound": 11,
+    "duoforge.interactions.modify_damage_chain_order": 84,
+    "duoforge.interactions.multi_hit_mirror_armor_rows": 10,
+    "duoforge.interactions.multiaccuracy_later_hits": 19,
+    "duoforge.interactions.rage_powder_batch_rows": 1785,
+    "duoforge.interactions.rain_dish_friend_guard_rows": 36,
+    "duoforge.interactions.small_rules_rows": 1078,
+    "duoforge.interactions.sniper_chain_order": 3,
+    "duoforge.interactions.thirteen_abilities_rows": 42,
+    "duoforge.items.bright_powder": 38,
+    "duoforge.items.power_and_accuracy_items": 21,
+    "duoforge.mechanics.item_shown_fold": 8,
+    "duoforge.moves.alluring_voice": 41,
+    "duoforge.moves.alluring_voice_dragon_cheer_rows": 10,
+    "duoforge.moves.ally_switch": 159,
+    "duoforge.moves.destiny_bond": 29,
+    "duoforge.moves.destiny_bond_final_gambit_rows": 13,
+    "duoforge.moves.dragon_cheer": 48,
+    "duoforge.moves.final_gambit": 14,
+    "duoforge.moves.hard_press": 12,
+    "duoforge.moves.heal_block": 291,
+    "duoforge.moves.heavy_slam": 11,
+    "duoforge.moves.hits_taken_hazard_moves": 271,
+    "duoforge.moves.moves_batch_rows": 46,
+    "duoforge.moves.multi_hit_count": 25,
+    "duoforge.moves.power_move_rows": 20,
+    "duoforge.moves.power_trip": 12,
+    "duoforge.moves.psych_up_howl_ally_switch_rows": 20,
+    "duoforge.moves.quick_guard_view": 10,
+    "duoforge.moves.rage_fist": 21,
+    "duoforge.moves.rage_powder_view": 1305,
+    "duoforge.moves.simple_move_rows": 74,
+    "duoforge.moves.switch_clears_volatiles": 13,
+    "duoforge.moves.throat_chop": 49,
+    "duoforge.moves.throat_chop_heal_block_view": 299,
+    "duoforge.moves.tri_attack": 4
+   },
+   "before": {
+    "duoforge.state.pool_g30": 3090,
+    "duoforge.state.pool_g33": 29,
+    "duoforge.state.pool_g34": 1162,
+    "duoforge.state.pool_g35": 191,
+    "duoforge.state.pool_g39": 58,
+    "duoforge.state.pool_g67": 190,
+    "duoforge.state.pool_g77": 46,
+    "duoforge.state.pool_g83": 139
+   }
+  }
+ }
+}

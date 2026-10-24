@@ -1,8 +1,8 @@
 """Abilities: the ability families (-ate, pinch, weather and terrain setters), their matchers and
 parameters, the ability facts by step and their checks.
 
-Part of the table generator tools/datagen/gen_closure.py (restructure step 5: split by area; every
-statement is unchanged from gen_closure.py@8800b625).
+Part of the table generator tools/datagen/gen_closure.py (restructure step 5: split by area from
+gen_closure.py@8800b625).
 """
 import os
 import re
@@ -63,7 +63,7 @@ MEGA2_ABILITY_FACTS = (
 # reads by id; the pinned callbacks they hard-code are checked here, whole, whitespace aside (Regenerator's is the Champions mod's
 # own entry: G32_ENTRY_FACTS-style, champ=True). Mold Breaker, which Hyper Cutter, Queenly Majesty, Damp, Sturdy, Snow Cloak, Sand
 # Veil and Limber are breakable against, is not marked. Damp is inert: its callbacks stop Explosion, Mind Blown, Misty Explosion,
-# Self-Destruct and Aftermath, none of which is marked (tests/test_pool_g39.c pins it, and Sturdy's OHKO immunity likewise).
+# Self-Destruct and Aftermath, none of which is marked (tests/abilities/test_damp_sturdy_rows.c pins it, and Sturdy's OHKO immunity likewise).
 G39_ABILITY_FACTS = (
     ('hypercutter', ("onTryBoost(boost, target, source, effect) { if (source && target === source) return; "
                      "if (boost.atk && boost.atk < 0) { delete boost.atk; if (!(effect as ActiveMove).secondaries) { "
@@ -132,7 +132,7 @@ G53_ABILITY_FACTS = (
 # are engine rows (ENGINE_ROWS) that the turn code reads by id; the pinned callbacks they hard-code are checked here, whole,
 # whitespace aside. The Champions mod overrides none of them (check_g34_facts). Mold Breaker, Teravolt and Turboblaze are not
 # marked, and Mycelium Might is not in the pool, so no marked ability ignores the `breakable` flag of Telepathy, Volt Absorb or
-# Punk Rock (tests/test_pool_g45.c pins the refusals).
+# Punk Rock (tests/abilities/test_simple_ability_rows.c pins the refusals).
 G45_ABILITY_FACTS = (
     ('steadfast', ("onFlinch(pokemon) { this.boost({ spe: 1 }); },", 'flags: {},')),
     ('weakarmor', ("onDamagingHit(damage, target, source, move) { if (move.category === 'Physical') { "
@@ -772,3 +772,121 @@ def check_g37_facts(abil_ts, champ_abil):
         for fact in facts:
             if norm(fact) not in text:
                 fail('ability %s: the entry no longer has "%s"' % (rid, fact))
+
+
+# A2a (Champions-100 batch A2, decision 0015 entry 5dy): fourteen abilities with one clause each at an existing hook, engine rows
+# (ENGINE_ROWS) that the turn code reads by id. Their pinned callbacks are demanded whole, whitespace aside, and the Champions mod
+# has no entry of its own for any of them except Natural Cure (A2A_CHAMPIONS_FACTS). The engine reads: Illuminate as Keen Eye
+# (dfi_boost, dfi_accuracy_check), White Smoke as Clear Body (dfi_boost), Water Absorb and Earth Eater as Volt Absorb and Motor
+# Drive as Lightning Rod without the redirect (dfi_try_hit_abilities), Ice Body as Rain Dish under snow (dfi_weather_heal),
+# Surge Surfer and Quick Feet in dfi_speed_key (with par's Quick Feet test, A2A_OTHER_FACTS), Corrosion in dfi_try_status
+# (setStatus's source test, A2A_OTHER_FACTS), Purifying Salt in dfi_try_status, dfi_yawn and the attack chain, Gooey and Poison
+# Point at DamagingHit (Poison Point's draw is site 26), Tangled Feet in the accuracy chain, Natural Cure at the switch-out
+# (combat/flow/switch.h). Mold Breaker, the one pool ability that ignores the breakable flag, is not marked.
+A2A_ABILITY_FACTS = (
+    ('illuminate', ("onTryBoost(boost, target, source, effect) { if (source && target === source) return; "
+                    "if (boost.accuracy && boost.accuracy < 0) { delete boost.accuracy; if (!(effect as ActiveMove).secondaries) { "
+                    "this.add('-fail', target, 'unboost', 'accuracy', '[from] ability: Illuminate', `[of] ${target}`); } } },",
+                    "onModifyMove(move) { move.ignoreEvasion = true; },",
+                    'flags: { breakable: 1 },')),
+    ('whitesmoke', ("onTryBoost(boost, target, source, effect) { if (source && target === source) return; "
+                    "let showMsg = false; let i: BoostID; for (i in boost) { if (boost[i]! < 0) { delete boost[i]; showMsg = true; } } "
+                    "if (showMsg && !(effect as ActiveMove).secondaries && effect.id !== 'octolock') { "
+                    "this.add('-fail', target, 'unboost', '[from] ability: White Smoke', `[of] ${target}`); } },",
+                    'flags: { breakable: 1 },')),
+    ('waterabsorb', ("onTryHit(target, source, move) { if (target !== source && move.type === 'Water') { "
+                     "if (!this.heal(target.baseMaxhp / 4)) { this.add('-immune', target, '[from] ability: Water Absorb'); } "
+                     "return null; } },",
+                     'flags: { breakable: 1 },')),
+    ('eartheater', ("onTryHit(target, source, move) { if (target !== source && move.type === 'Ground') { "
+                    "if (!this.heal(target.baseMaxhp / 4)) { this.add('-immune', target, '[from] ability: Earth Eater'); } "
+                    "return null; } },",
+                    'flags: { breakable: 1 },')),
+    ('motordrive', ("onTryHit(target, source, move) { if (target !== source && move.type === 'Electric') { "
+                    "if (!this.boost({ spe: 1 })) { this.add('-immune', target, '[from] ability: Motor Drive'); } "
+                    "return null; } },",
+                    'flags: { breakable: 1 },')),
+    ('icebody', ("onWeather(target, source, effect) { if (effect.id === 'hail' || effect.id === 'snowscape') { "
+                 "this.heal(target.baseMaxhp / 16); } },",
+                 "onImmunity(type, pokemon) { if (type === 'hail') return false; },",
+                 'flags: {},')),
+    ('surgesurfer', ("onModifySpe(spe) { if (this.field.isTerrain('electricterrain')) { return this.chainModify(2); } },",
+                     'flags: {},')),
+    ('quickfeet', ("onModifySpe(spe, pokemon) { if (pokemon.status) { return this.chainModify(1.5); } },",
+                   'flags: {},')),
+    ('corrosion', ('// Implemented in sim/pokemon.js:Pokemon#setStatus', 'flags: {},')),
+    ('purifyingsalt', ("onSetStatus(status, target, source, effect) { if ((effect as Move)?.status) { "
+                       "this.add('-immune', target, '[from] ability: Purifying Salt'); } return false; },",
+                       "onTryAddVolatile(status, target) { if (status.id === 'yawn') { "
+                       "this.add('-immune', target, '[from] ability: Purifying Salt'); return null; } },",
+                       'onSourceModifyAtkPriority: 6,',
+                       "onSourceModifyAtk(atk, attacker, defender, move) { if (move.type === 'Ghost') { "
+                       "this.debug('Purifying Salt weaken'); return this.chainModify(0.5); } },",
+                       'onSourceModifySpAPriority: 5,',
+                       "onSourceModifySpA(spa, attacker, defender, move) { if (move.type === 'Ghost') { "
+                       "this.debug('Purifying Salt weaken'); return this.chainModify(0.5); } },",
+                       'flags: { breakable: 1 },')),
+    ('gooey', ("onDamagingHit(damage, target, source, move) { if (this.checkMoveMakesContact(move, source, target, true)) { "
+               "this.add('-ability', target, 'Gooey'); this.boost({ spe: -1 }, source, target, null, true); } },",
+               'flags: {},')),
+    ('poisonpoint', ("onDamagingHit(damage, target, source, move) { if (this.checkMoveMakesContact(move, source, target)) { "
+                     "if (this.randomChance(3, 10)) { source.trySetStatus('psn', target); } } },",
+                     'flags: {},')),
+    ('tangledfeet', ('onModifyAccuracyPriority: -1,',
+                     "onModifyAccuracy(accuracy, target) { if (typeof accuracy !== 'number') return; "
+                     "if (target?.volatiles['confusion']) { this.debug('Tangled Feet - decreasing accuracy'); "
+                     "return this.chainModify(0.5); } },",
+                     'flags: { breakable: 1 },')),
+)
+# Natural Cure: the Champions entry replaces the base one's onCheckShow and onSwitchOut (data/mods/champions/abilities.ts:49-58).
+A2A_CHAMPIONS_FACTS = (
+    ('naturalcure', ('inherit: true,', 'onCheckShow: undefined, // no inherit',
+                     "onSwitchOut(pokemon) { if (!pokemon.status || pokemon.status === 'fnt') return; "
+                     "this.add('-curestatus', pokemon, pokemon.status, '[from] ability: Natural Cure', '[silent]'); "
+                     'pokemon.clearStatus(); },')),
+)
+# The rules outside the ability entries that the engine hard-codes with them: Corrosion is setStatus's source test before the status
+# immunity (sim/pokemon.ts:1709-1713), Quick Feet is par's test (data/conditions.ts:30-38), clearStatus is setStatus('')
+# (sim/pokemon.ts:1755-1762), and Snowscape's upkeep runs eachEvent('Weather') (data/conditions.ts:721-724).
+A2A_OTHER_FACTS = (
+    ('sim/pokemon.ts', ("!ignoreImmunities && status.id && !(source?.hasAbility('corrosion') && ['tox', 'psn'].includes(status.id))",
+                        "if (!this.runStatusImmunity(status.id === 'tox' ? 'psn' : status.id)) {",
+                        "clearStatus() { if (!this.hp || !this.status) return false; if (this.status === 'slp' && "
+                        "this.removeVolatile('nightmare')) { this.battle.add('-end', this, 'Nightmare', '[silent]'); } "
+                        "this.setStatus(''); return true; }")),
+    ('data/conditions.ts', ("onModifySpePriority: -101, onModifySpe(spe, pokemon) { // Paralysis occurs after all other Speed "
+                            "modifiers, so evaluate all modifiers up to this point first spe = this.finalModify(spe); "
+                            "if (!pokemon.hasAbility('quickfeet')) { spe = Math.floor(spe * 50 / 100); } return spe; },",
+                            "this.add('-weather', 'Snowscape', '[upkeep]'); if (this.field.isWeather('snowscape')) this.eachEvent('Weather');")),
+)
+
+
+def check_a2a_facts(abil_ts, champ_abil, others, only=None):
+    """A2a (decision 0015 entry 5dy): every fact of A2A_ABILITY_FACTS is in the pinned ability entry, whitespace aside, and the
+    Champions mod has no entry of its own for it; Natural Cure's facts are in the Champions entry (A2A_CHAMPIONS_FACTS); the
+    facts of A2A_OTHER_FACTS are in their files (`others`: rel -> Source). `only`: (ability facts, champions facts, other
+    facts) to check instead (the generator's tests)."""
+    base, champ, other = (A2A_ABILITY_FACTS, A2A_CHAMPIONS_FACTS, A2A_OTHER_FACTS) if only is None else only
+    for aid, facts in base:
+        e = abil_ts.entry(aid)
+        if e is None:
+            fail('ability %s not found' % aid)
+        if champ_abil.entry(aid) is not None:
+            fail('ability %s: the champions mod overrides the entry' % aid)
+        text = norm(chr(10).join(e[2]))
+        for fact in facts:
+            if norm(fact) not in text:
+                fail('ability %s: the entry no longer has "%s"' % (aid, fact))
+    for aid, facts in champ:
+        e = champ_abil.entry(aid)
+        if e is None:
+            fail('ability %s: the champions entry is not found' % aid)
+        text = norm(chr(10).join(e[2]))
+        for fact in facts:
+            if norm(fact) not in text:
+                fail('ability %s: the champions entry no longer has "%s"' % (aid, fact))
+    for rel, facts in other:
+        text = norm(chr(10).join(others[rel].lines))
+        for fact in facts:
+            if norm(fact) not in text:
+                fail('%s: the pin no longer has "%s"' % (rel, fact))

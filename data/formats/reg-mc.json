@@ -1,5 +1,5 @@
 {
- "comment": "The format definition of Reg M-C (restructure step 10, docs/architecture/formats.md). Hand-written. Every value names the line of the pinned Showdown checkout it comes from; tools/datagen/gen_format.py --pin <checkout> compares each quote with its line and reads the value back from it. tools/datagen/gen_format.py writes src/data/format_tables.h from this file; gen_closure.py reads the format id and the pool source from it.",
+ "comment": "The format definition of Reg M-C (restructure step 10, docs/architecture/formats.md). Hand-written. Every value names the line of the pinned Showdown checkout it comes from; tools/datagen/gen_format.py --pin <checkout> compares each quote with its line and reads the value back from it. tools/datagen/gen_format.py writes src/data/formats/reg-mc/format_tables.h from this file; gen_closure.py reads the format id and the pool source from it.",
  "id": "reg-mc",
  "showdown_commit": "b2cb775b0616115b775534eaeff50300e1fc81fc",
  "showdown_format_id": "gen9championsvgc2026regmc",
@@ -57,12 +57,22 @@
    "pin": ["data/rulesets.ts", 785, "'Timeout Auto Choose', 'DC Timer Bank',"]}
  },
  "engine": {
-  "comment": "The facts the C engine uses, as named constants of src/data/format_tables.h (DFI_FORMAT_<NAME>). active_per_side is the position count of game_type doubles.",
+  "comment": "The facts the C engine uses, as named constants of src/data/formats/reg-mc/format_tables.h (DFI_FORMAT_<NAME>). active_per_side is the position count of game_type doubles.",
   "active_per_side": 2
  },
  "pool": {
   "source": "data/formats/pools/reg-mc.json",
   "sha256": "b6351b56ea8ea20cb9d1944ff41fe443d9d8f763dd9506ddd3f9921be50353e2",
   "made_by": "docs/research/expansion/tools/build_legal_pool.js: the pinned TeamValidator for showdown_format_id at showdown_commit (its meta names both)"
+ },
+ "tables": {
+  "comment": "What tools/datagen/gen_closure.py --pool --format reg-mc builds (restructure step 5): the Champions rule set (its override files, their pinned hashes and the PP cap of 20 live in tools/datagen/tablegen/source.py), the symbols dfi_pool_* and DFI_POOL_* of src/data/formats/reg-mc/pool_tables.{h,c}, 64 learnset bytes (one bit per pool move: 511 moves), and the id bounds of the engine fields today (formes below 0xFFFF and moves up to 0xFFFF as u16 ids; items and abilities 254, u8 with 0xFF as none; 512 legal moves per forme, DUOFORGE_DATA_MAX_FORME_MOVES). Every value is required; nothing is excluded from the pool.",
+  "rule_set": "champions",
+  "symbol_prefix": "pool",
+  "include_guard": "DUOFORGE_DATA_POOL_TABLES_H",
+  "stem": "pool_tables",
+  "learnset_bytes": 64,
+  "bounds": {"formes": 65534, "moves": 65535, "moves_per_forme": 512, "items": 254, "abilities": 254},
+  "excluded_formes": []
  }
 }

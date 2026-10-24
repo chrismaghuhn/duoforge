@@ -1,0 +1,4500 @@
+{
+ "P1_command_changed": [],
+ "P1_inventory": {
+  "debug": {
+   "equal": true,
+   "names": 1599,
+   "sha256": "b49d6d79b7d98a54e894f85fff28b3742c7273c21e7edddab302e04b848f116c"
+  },
+  "ipo": {
+   "equal": true,
+   "names": 1599,
+   "sha256": "b49d6d79b7d98a54e894f85fff28b3742c7273c21e7edddab302e04b848f116c"
+  },
+  "noipo": {
+   "equal": true,
+   "names": 1599,
+   "sha256": "b49d6d79b7d98a54e894f85fff28b3742c7273c21e7edddab302e04b848f116c"
+  }
+ },
+ "P1_properties_equal": true,
+ "P1_selected_tests": {
+  "after-ipo": {
+   "names_sha256": "6a07a7fd47266c4ca8da1191905ae234333385ae62565a36f7d4ef9eaae1c96c",
+   "passed": 273,
+   "tests": 273
+  },
+  "after-noipo": {
+   "names_sha256": "7b2904bc8ca60c2b670320eff4f1c4aee07bebf01cdf7730ece0b081a8804a70",
+   "passed": 268,
+   "tests": 268
+  },
+  "before-ipo": {
+   "names_sha256": "6a07a7fd47266c4ca8da1191905ae234333385ae62565a36f7d4ef9eaae1c96c",
+   "passed": 273,
+   "tests": 273
+  },
+  "before-noipo": {
+   "names_sha256": "7b2904bc8ca60c2b670320eff4f1c4aee07bebf01cdf7730ece0b081a8804a70",
+   "passed": 268,
+   "tests": 268
+  }
+ },
+ "P2_reference": {
+  "checks": {
+   "duoforge_reference_conformance": "duoforge.reference.conformance: 3042 checks, 0 failures",
+   "duoforge_reference_conformance_pool": "duoforge.reference.conformance_pool: 3042 checks, 0 failures",
+   "duoforge_reference_conformance_pool_data": "duoforge.reference.conformance_pool_data: 15754 checks, 0 failures",
+   "duoforge_reference_conformance_team_c": "duoforge.reference.conformance_team_c: 2967 checks, 0 failures",
+   "duoforge_reference_conformance_team_c_pool": "duoforge.reference.conformance_team_c_pool: 2967 checks, 0 failures",
+   "duoforge_reference_tiebreak": "duoforge.reference.tiebreak: 4293 checks, 0 failures",
+   "duoforge_reference_tiebreak_pool": "duoforge.reference.tiebreak_pool: 4293 checks, 0 failures",
+   "duoforge_reference_tiebreak_pool_data": "duoforge.reference.tiebreak_pool_data: 29398 checks, 0 failures",
+   "duoforge_reference_tiebreak_team_c": "duoforge.reference.tiebreak_team_c: 3835 checks, 0 failures",
+   "duoforge_reference_tiebreak_team_c_pool": "duoforge.reference.tiebreak_team_c_pool: 3835 checks, 0 failures"
+  },
+  "executions": 2808,
+  "ipo": {
+   "equal": true,
+   "sha256": "77dc5c4a6602dceb527cc82d8733ddbaa29850446a8156529cb029db5d12fce5"
+  },
+  "native_reports_equal": {
+   "debug": true,
+   "ipo": true,
+   "noipo": true
+  },
+  "noipo": {
+   "equal": true,
+   "sha256": "77dc5c4a6602dceb527cc82d8733ddbaa29850446a8156529cb029db5d12fce5"
+  },
+  "steps": 24664,
+  "stops": 9229,
+  "unique_battles": 1241,
+  "variants": 10
+ },
+ "P3_perft_pins_sha256": "84c744369b4fdc0705d4a2c7f4c08d5df2cbc78fb53ef2898bca3edb2192ddcb",
+ "P3_perft_pins_unchanged": true,
+ "P4_bench_sha256_unchanged": true,
+ "P5_fingerprints": {
+  "debug": {
+   "CLOSURE": "09d8d247c926610b2c3957002644221c01cc07d268bfa98461575c3b1c6a8306",
+   "POOL": "c4d08f843b984a18316aaf683ab3c968b391988ca4dad76ea06c0868e56abfeb",
+   "TEAM_C": "520eca894c0c40b6fa6f316fa2c654c1f32a1bf69d58d63f929921d3911f047f"
+  },
+  "ipo": {
+   "CLOSURE": "09d8d247c926610b2c3957002644221c01cc07d268bfa98461575c3b1c6a8306",
+   "POOL": "c4d08f843b984a18316aaf683ab3c968b391988ca4dad76ea06c0868e56abfeb",
+   "TEAM_C": "520eca894c0c40b6fa6f316fa2c654c1f32a1bf69d58d63f929921d3911f047f"
+  },
+  "noipo": {
+   "CLOSURE": "09d8d247c926610b2c3957002644221c01cc07d268bfa98461575c3b1c6a8306",
+   "POOL": "c4d08f843b984a18316aaf683ab3c968b391988ca4dad76ea06c0868e56abfeb",
+   "TEAM_C": "520eca894c0c40b6fa6f316fa2c654c1f32a1bf69d58d63f929921d3911f047f"
+  }
+ },
+ "P5_fingerprints_equal": true,
+ "P5_generated_unchanged": true,
+ "P6_public_surface": {
+  "debug": {
+   "equal": true,
+   "exports": 249,
+   "exports_sha256": "75a403d650869a25c70376009090662604c82396542ff78a90031e364abb7ce2",
+   "layout_sha256": "37b8f5e15c52966d3b7cff0f3f175e047e2f1d2dfec15c9e9a7cd27fa6308774"
+  },
+  "include_diff_empty": true,
+  "ipo": {
+   "equal": true,
+   "exports": 249,
+   "exports_sha256": "75a403d650869a25c70376009090662604c82396542ff78a90031e364abb7ce2",
+   "layout_sha256": "37b8f5e15c52966d3b7cff0f3f175e047e2f1d2dfec15c9e9a7cd27fa6308774"
+  },
+  "noipo": {
+   "equal": true,
+   "exports": 249,
+   "exports_sha256": "75a403d650869a25c70376009090662604c82396542ff78a90031e364abb7ce2",
+   "layout_sha256": "37b8f5e15c52966d3b7cff0f3f175e047e2f1d2dfec15c9e9a7cd27fa6308774"
+  }
+ },
+ "after": {
+  "commit": "664830c707ca9231e9691d6431b9c8b112c80691",
+  "dirty": false,
+  "phase": "after"
+ },
+ "before": {
+  "commit": "907458c430e568c8707bdf1b9fd89e9ef2a83b79",
+  "dirty": false,
+  "phase": "before"
+ },
+ "callgrind_gate": {
+  "limit": 1.01,
+  "profiles": {
+   "ipo": {
+    "code_diff": {
+     "clones": {
+      "dfi_ability": {
+       "after": [],
+       "before": [
+        "dfi_ability.lto_priv.0"
+       ]
+      },
+      "dfi_accuracy_check": {
+       "after": [
+        "dfi_accuracy_check.lto_priv.0"
+       ],
+       "before": [
+        "dfi_accuracy_check.lto_priv.0"
+       ]
+      },
+      "dfi_accuracy_targets": {
+       "after": [
+        "dfi_accuracy_targets.lto_priv.0"
+       ],
+       "before": [
+        "dfi_accuracy_targets.lto_priv.0"
+       ]
+      },
+      "dfi_add_heal_block": {
+       "after": [],
+       "before": [
+        "dfi_add_heal_block.lto_priv.0"
+       ]
+      },
+      "dfi_add_lockout": {
+       "after": [],
+       "before": [
+        "dfi_add_lockout.isra.0"
+       ]
+      },
+      "dfi_add_volatile": {
+       "after": [
+        "dfi_add_volatile.lto_priv.0"
+       ],
+       "before": [
+        "dfi_add_volatile.lto_priv.0"
+       ]
+      },
+      "dfi_after_faint": {
+       "after": [
+        "dfi_after_faint"
+       ],
+       "before": [
+        "dfi_after_faint"
+       ]
+      },
+      "dfi_alive": {
+       "after": [],
+       "before": [
+        "dfi_alive.lto_priv.0"
+       ]
+      },
+      "dfi_at": {
+       "after": [],
+       "before": [
+        "dfi_at.lto_priv.0"
+       ]
+      },
+      "dfi_attract_update": {
+       "after": [
+        "dfi_attract_update"
+       ],
+       "before": [
+        "dfi_attract_update"
+       ]
+      },
+      "dfi_battle_step_observed": {
+       "after": [
+        "dfi_battle_step_observed.constprop.0"
+       ],
+       "before": [
+        "dfi_battle_step_observed.constprop.0"
+       ]
+      },
+      "dfi_before_move": {
+       "after": [
+        "dfi_before_move.lto_priv.0",
+        "dfi_before_move.lto_priv.0.cold"
+       ],
+       "before": [
+        "dfi_before_move.lto_priv.0",
+        "dfi_before_move.lto_priv.0.cold"
+       ]
+      },
+      "dfi_boost": {
+       "after": [
+        "dfi_boost.isra.0",
+        "dfi_boost.isra.0.cold"
+       ],
+       "before": [
+        "dfi_boost.isra.0",
+        "dfi_boost.isra.0.cold"
+       ]
+      },
+      "dfi_bounce": {
+       "after": [
+        "dfi_bounce.lto_priv.0"
+       ],
+       "before": [
+        "dfi_bounce.lto_priv.0"
+       ]
+      },
+      "dfi_bug_bite": {
+       "after": [
+        "dfi_bug_bite.lto_priv.0"
+       ],
+       "before": [
+        "dfi_bug_bite.lto_priv.0"
+       ]
+      },
+      "dfi_clear_terrain": {
+       "after": [
+        "dfi_clear_terrain.lto_priv.0"
+       ],
+       "before": [
+        "dfi_clear_terrain.lto_priv.0"
+       ]
+      },
+      "dfi_closure_battle_supported": {
+       "after": [
+        "dfi_closure_battle_supported.constprop.0"
+       ],
+       "before": [
+        "dfi_closure_battle_supported.constprop.0"
+       ]
+      },
+      "dfi_cute_charm": {
+       "after": [
+        "dfi_cute_charm.isra.0"
+       ],
+       "before": [
+        "dfi_cute_charm.isra.0"
+       ]
+      },
+      "dfi_deal": {
+       "after": [
+        "dfi_deal.lto_priv.0"
+       ],
+       "before": [
+        "dfi_deal.lto_priv.0"
+       ]
+      },
+      "dfi_double_shock_self": {
+       "after": [],
+       "before": [
+        "dfi_double_shock_self.lto_priv.0"
+       ]
+      },
+      "dfi_drag_blocked": {
+       "after": [
+        "dfi_drag_blocked.lto_priv.0"
+       ],
+       "before": [
+        "dfi_drag_blocked.lto_priv.0"
+       ]
+      },
+      "dfi_entry_ability": {
+       "after": [
+        "dfi_entry_ability",
+        "dfi_entry_ability.cold"
+       ],
+       "before": [
+        "dfi_entry_ability.lto_priv.0",
+        "dfi_entry_ability.lto_priv.0.cold"
+       ]
+      },
+      "dfi_fails_skillswap": {
+       "after": [
+        "dfi_fails_skillswap.lto_priv.0"
+       ],
+       "before": [
+        "dfi_fails_skillswap"
+       ]
+      },
+      "dfi_flame_body": {
+       "after": [
+        "dfi_flame_body.isra.0"
+       ],
+       "before": [
+        "dfi_flame_body.isra.0"
+       ]
+      },
+      "dfi_flower_veil_holder": {
+       "after": [
+        "dfi_flower_veil_holder.lto_priv.0"
+       ],
+       "before": [
+        "dfi_flower_veil_holder.lto_priv.0"
+       ]
+      },
+      "dfi_get_damage": {
+       "after": [
+        "dfi_get_damage.lto_priv.0"
+       ],
+       "before": [
+        "dfi_get_damage.lto_priv.0"
+       ]
+      },
+      "dfi_gooey": {
+       "after": [
+        "dfi_gooey.isra.0"
+       ],
+       "before": [
+        "dfi_gooey.isra.0"
+       ]
+      },
+      "dfi_has_entry": {
+       "after": [
+        "dfi_has_entry"
+       ],
+       "before": [
+        "dfi_has_entry.lto_priv.0"
+       ]
+      },
+      "dfi_has_type": {
+       "after": [],
+       "before": [
+        "dfi_has_type.lto_priv.0"
+       ]
+      },
+      "dfi_hazard_move": {
+       "after": [],
+       "before": [
+        "dfi_hazard_move.isra.0"
+       ]
+      },
+      "dfi_herb_due": {
+       "after": [
+        "dfi_herb_due"
+       ],
+       "before": [
+        "dfi_herb_due"
+       ]
+      },
+      "dfi_herb_event": {
+       "after": [
+        "dfi_herb_event.lto_priv.0"
+       ],
+       "before": [
+        "dfi_herb_event.lto_priv.0"
+       ]
+      },
+      "dfi_herbs_matter": {
+       "after": [
+        "dfi_herbs_matter.lto_priv.0"
+       ],
+       "before": [
+        "dfi_herbs_matter.lto_priv.0"
+       ]
+      },
+      "dfi_holds": {
+       "after": [],
+       "before": [
+        "dfi_holds.lto_priv.0"
+       ]
+      },
+      "dfi_hospitality": {
+       "after": [
+        "dfi_hospitality"
+       ],
+       "before": [
+        "dfi_hospitality.lto_priv.0"
+       ]
+      },
+      "dfi_invulnerable_to": {
+       "after": [
+        "dfi_invulnerable_to.isra.0"
+       ],
+       "before": [
+        "dfi_invulnerable_to.isra.0"
+       ]
+      },
+      "dfi_item_code": {
+       "after": [],
+       "before": [
+        "dfi_item_code.lto_priv.0",
+        "dfi_item_code.part.0.lto_priv.0"
+       ]
+      },
+      "dfi_item_start_shown": {
+       "after": [
+        "dfi_item_start_shown"
+       ],
+       "before": [
+        "dfi_item_start_shown.lto_priv.0"
+       ]
+      },
+      "dfi_knock_off": {
+       "after": [
+        "dfi_knock_off.lto_priv.0"
+       ],
+       "before": [
+        "dfi_knock_off.lto_priv.0"
+       ]
+      },
+      "dfi_leaf_guard_sun": {
+       "after": [
+        "dfi_leaf_guard_sun.lto_priv.0"
+       ],
+       "before": [
+        "dfi_leaf_guard_sun.lto_priv.0"
+       ]
+      },
+      "dfi_lum_berry": {
+       "after": [
+        "dfi_lum_berry"
+       ],
+       "before": [
+        "dfi_lum_berry"
+       ]
+      },
+      "dfi_move_priority": {
+       "after": [
+        "dfi_move_priority.lto_priv.0"
+       ],
+       "before": [
+        "dfi_move_priority.lto_priv.0"
+       ]
+      },
+      "dfi_move_type_now": {
+       "after": [
+        "dfi_move_type_now.lto_priv.0"
+       ],
+       "before": [
+        "dfi_move_type_now.lto_priv.0"
+       ]
+      },
+      "dfi_piercing_drill_passes": {
+       "after": [
+        "dfi_piercing_drill_passes.lto_priv.0"
+       ],
+       "before": [
+        "dfi_piercing_drill_passes.lto_priv.0"
+       ]
+      },
+      "dfi_place": {
+       "after": [
+        "dfi_place.constprop.0"
+       ],
+       "before": [
+        "dfi_place.constprop.0"
+       ]
+      },
+      "dfi_poison_point": {
+       "after": [
+        "dfi_poison_point.isra.0"
+       ],
+       "before": [
+        "dfi_poison_point.isra.0"
+       ]
+      },
+      "dfi_poison_touch": {
+       "after": [
+        "dfi_poison_touch.isra.0"
+       ],
+       "before": [
+        "dfi_poison_touch.isra.0"
+       ]
+      },
+      "dfi_protect_targets": {
+       "after": [
+        "dfi_protect_targets.lto_priv.0"
+       ],
+       "before": [
+        "dfi_protect_targets.lto_priv.0"
+       ]
+      },
+      "dfi_red_card": {
+       "after": [],
+       "before": [
+        "dfi_red_card.lto_priv.0"
+       ]
+      },
+      "dfi_residual_events_run": {
+       "after": [
+        "dfi_residual_events_run.constprop.0",
+        "dfi_residual_events_run.constprop.0.cold"
+       ],
+       "before": [
+        "dfi_residual_events_run.constprop.0",
+        "dfi_residual_events_run.constprop.0.cold"
+       ]
+      },
+      "dfi_run_after_you": {
+       "after": [],
+       "before": [
+        "dfi_run_after_you.isra.0"
+       ]
+      },
+      "dfi_run_ally_switch": {
+       "after": [
+        "dfi_run_ally_switch.lto_priv.0"
+       ],
+       "before": [
+        "dfi_run_ally_switch.lto_priv.0"
+       ]
+      },
+      "dfi_run_curse": {
+       "after": [
+        "dfi_run_curse.lto_priv.0",
+        "dfi_run_curse.lto_priv.0.cold"
+       ],
+       "before": [
+        "dfi_run_curse.lto_priv.0",
+        "dfi_run_curse.lto_priv.0.cold"
+       ]
+      },
+      "dfi_run_entries": {
+       "after": [
+        "dfi_run_entries"
+       ],
+       "before": [
+        "dfi_run_entries"
+       ]
+      },
+      "dfi_run_heal_fraction": {
+       "after": [
+        "dfi_run_heal_fraction.lto_priv.0"
+       ],
+       "before": [
+        "dfi_run_heal_fraction.lto_priv.0"
+       ]
+      },
+      "dfi_run_heal_pulse": {
+       "after": [],
+       "before": [
+        "dfi_run_heal_pulse.lto_priv.0"
+       ]
+      },
+      "dfi_run_move_body": {
+       "after": [
+        "dfi_run_move_body.lto_priv.0",
+        "dfi_run_move_body.lto_priv.0.cold"
+       ],
+       "before": [
+        "dfi_run_move_body.lto_priv.0",
+        "dfi_run_move_body.lto_priv.0.cold"
+       ]
+      },
+      "dfi_run_quash": {
+       "after": [],
+       "before": [
+        "dfi_run_quash.isra.0"
+       ]
+      },
+      "dfi_run_strength_sap": {
+       "after": [],
+       "before": [
+        "dfi_run_strength_sap.isra.0"
+       ]
+      },
+      "dfi_set_held": {
+       "after": [
+        "dfi_set_held"
+       ],
+       "before": [
+        "dfi_set_held.lto_priv.0"
+       ]
+      },
+      "dfi_sf_strips": {
+       "after": [
+        "dfi_sf_strips.lto_priv.0"
+       ],
+       "before": [
+        "dfi_sf_strips.lto_priv.0"
+       ]
+      },
+      "dfi_side_lists": {
+       "after": [
+        "dfi_side_lists.constprop.0"
+       ],
+       "before": [
+        "dfi_side_lists.constprop.0"
+       ]
+      },
+      "dfi_skill_swap": {
+       "after": [],
+       "before": [
+        "dfi_skill_swap.lto_priv.0",
+        "dfi_skill_swap.lto_priv.0.cold"
+       ]
+      },
+      "dfi_skill_swap_start": {
+       "after": [
+        "dfi_skill_swap_start.lto_priv.0"
+       ],
+       "before": [
+        "dfi_skill_swap_start"
+       ]
+      },
+      "dfi_speed_key": {
+       "after": [
+        "dfi_speed_key.lto_priv.0"
+       ],
+       "before": [
+        "dfi_speed_key.lto_priv.0"
+       ]
+      },
+      "dfi_spicy_spray": {
+       "after": [
+        "dfi_spicy_spray.lto_priv.0"
+       ],
+       "before": [
+        "dfi_spicy_spray.lto_priv.0"
+       ]
+      },
+      "dfi_static": {
+       "after": [
+        "dfi_static.isra.0"
+       ],
+       "before": [
+        "dfi_static.isra.0"
+       ]
+      },
+      "dfi_status_effects": {
+       "after": [
+        "dfi_status_effects.lto_priv.0",
+        "dfi_status_effects.lto_priv.0.cold"
+       ],
+       "before": [
+        "dfi_status_effects.lto_priv.0",
+        "dfi_status_effects.lto_priv.0.cold"
+       ]
+      },
+      "dfi_stone_refused_for": {
+       "after": [],
+       "before": [
+        "dfi_stone_refused_for.lto_priv.0"
+       ]
+      },
+      "dfi_sturdy_saves": {
+       "after": [
+        "dfi_sturdy_saves.isra.0"
+       ],
+       "before": [
+        "dfi_sturdy_saves.isra.0"
+       ]
+      },
+      "dfi_substitute_takes": {
+       "after": [
+        "dfi_substitute_takes.lto_priv.0"
+       ],
+       "before": [
+        "dfi_substitute_takes.lto_priv.0"
+       ]
+      },
+      "dfi_switch_in": {
+       "after": [
+        "dfi_switch_in.constprop.0",
+        "dfi_switch_in.constprop.0.cold"
+       ],
+       "before": [
+        "dfi_switch_in.constprop.0",
+        "dfi_switch_in.constprop.0.cold"
+       ]
+      },
+      "dfi_symbiosis": {
+       "after": [
+        "dfi_symbiosis.lto_priv.0"
+       ],
+       "before": [
+        "dfi_symbiosis.lto_priv.0"
+       ]
+      },
+      "dfi_terrain_change": {
+       "after": [
+        "dfi_terrain_change.lto_priv.0"
+       ],
+       "before": [
+        "dfi_terrain_change.lto_priv.0"
+       ]
+      },
+      "dfi_thief": {
+       "after": [
+        "dfi_thief.lto_priv.0"
+       ],
+       "before": [
+        "dfi_thief.lto_priv.0"
+       ]
+      },
+      "dfi_toxic_debris": {
+       "after": [
+        "dfi_toxic_debris.isra.0"
+       ],
+       "before": [
+        "dfi_toxic_debris.isra.0"
+       ]
+      },
+      "dfi_trick": {
+       "after": [
+        "dfi_trick.lto_priv.0"
+       ],
+       "before": []
+      },
+      "dfi_try_hit_abilities": {
+       "after": [
+        "dfi_try_hit_abilities.lto_priv.0"
+       ],
+       "before": [
+        "dfi_try_hit_abilities.lto_priv.0"
+       ]
+      },
+      "dfi_try_status": {
+       "after": [
+        "dfi_try_status.lto_priv.0"
+       ],
+       "before": [
+        "dfi_try_status.lto_priv.0"
+       ]
+      },
+      "dfi_turn_run": {
+       "after": [
+        "dfi_turn_run.constprop.0"
+       ],
+       "before": [
+        "dfi_turn_run.constprop.0"
+       ]
+      },
+      "dfi_unburden_on_take": {
+       "after": [
+        "dfi_unburden_on_take"
+       ],
+       "before": [
+        "dfi_unburden_on_take.lto_priv.0"
+       ]
+      },
+      "dfi_unnerved": {
+       "after": [
+        "dfi_unnerved.lto_priv.0"
+       ],
+       "before": [
+        "dfi_unnerved.lto_priv.0"
+       ]
+      },
+      "dfi_update": {
+       "after": [
+        "dfi_update.lto_priv.0",
+        "dfi_update.lto_priv.0.cold"
+       ],
+       "before": [
+        "dfi_update.lto_priv.0",
+        "dfi_update.lto_priv.0.cold"
+       ]
+      },
+      "dfi_use_item_core": {
+       "after": [
+        "dfi_use_item_core.lto_priv.0"
+       ],
+       "before": [
+        "dfi_use_item_core.lto_priv.0"
+       ]
+      },
+      "dfi_weather_heal": {
+       "after": [
+        "dfi_weather_heal.lto_priv.0",
+        "dfi_weather_heal.lto_priv.0.cold"
+       ],
+       "before": [
+        "dfi_weather_heal.lto_priv.0",
+        "dfi_weather_heal.lto_priv.0.cold"
+       ]
+      },
+      "dfi_weather_suppression_scan": {
+       "after": [
+        "dfi_weather_suppression_scan.lto_priv.0"
+       ],
+       "before": [
+        "dfi_weather_suppression_scan.lto_priv.0"
+       ]
+      }
+     },
+     "differing_groups": [
+      "dfi_ability",
+      "dfi_accuracy_check",
+      "dfi_accuracy_targets",
+      "dfi_add_heal_block",
+      "dfi_add_lockout",
+      "dfi_add_volatile",
+      "dfi_after_faint",
+      "dfi_alive",
+      "dfi_at",
+      "dfi_attract_update",
+      "dfi_battle_step_observed",
+      "dfi_before_move",
+      "dfi_boost",
+      "dfi_bounce",
+      "dfi_bug_bite",
+      "dfi_clear_terrain",
+      "dfi_closure_battle_supported",
+      "dfi_cute_charm",
+      "dfi_deal",
+      "dfi_double_shock_self",
+      "dfi_drag_blocked",
+      "dfi_entry_ability",
+      "dfi_fails_skillswap",
+      "dfi_flame_body",
+      "dfi_flower_veil_holder",
+      "dfi_get_damage",
+      "dfi_gooey",
+      "dfi_has_entry",
+      "dfi_has_type",
+      "dfi_hazard_move",
+      "dfi_herb_due",
+      "dfi_herb_event",
+      "dfi_herbs_matter",
+      "dfi_holds",
+      "dfi_hospitality",
+      "dfi_invulnerable_to",
+      "dfi_item_code",
+      "dfi_item_start_shown",
+      "dfi_knock_off",
+      "dfi_leaf_guard_sun",
+      "dfi_lum_berry",
+      "dfi_move_priority",
+      "dfi_move_type_now",
+      "dfi_piercing_drill_passes",
+      "dfi_place",
+      "dfi_poison_point",
+      "dfi_poison_touch",
+      "dfi_protect_targets",
+      "dfi_red_card",
+      "dfi_residual_events_run",
+      "dfi_run_after_you",
+      "dfi_run_ally_switch",
+      "dfi_run_curse",
+      "dfi_run_entries",
+      "dfi_run_heal_fraction",
+      "dfi_run_heal_pulse",
+      "dfi_run_move_body",
+      "dfi_run_quash",
+      "dfi_run_strength_sap",
+      "dfi_set_held",
+      "dfi_sf_strips",
+      "dfi_side_lists",
+      "dfi_skill_swap",
+      "dfi_skill_swap_start",
+      "dfi_speed_key",
+      "dfi_spicy_spray",
+      "dfi_static",
+      "dfi_status_effects",
+      "dfi_stone_refused_for",
+      "dfi_sturdy_saves",
+      "dfi_substitute_takes",
+      "dfi_switch_in",
+      "dfi_symbiosis",
+      "dfi_terrain_change",
+      "dfi_thief",
+      "dfi_toxic_debris",
+      "dfi_trick",
+      "dfi_try_hit_abilities",
+      "dfi_try_status",
+      "dfi_turn_run",
+      "dfi_unburden_on_take",
+      "dfi_unnerved",
+      "dfi_update",
+      "dfi_use_item_core",
+      "dfi_weather_heal",
+      "dfi_weather_suppression_scan"
+     ],
+     "functions": [
+      242,
+      224
+     ],
+     "groups": 228,
+     "instructions": {
+      "dfi_ability": [
+       42,
+       0
+      ],
+      "dfi_accuracy_check": [
+       758,
+       800
+      ],
+      "dfi_accuracy_targets": [
+       1287,
+       1260
+      ],
+      "dfi_add_heal_block": [
+       82,
+       0
+      ],
+      "dfi_add_lockout": [
+       27,
+       0
+      ],
+      "dfi_add_volatile": [
+       127,
+       129
+      ],
+      "dfi_after_faint": [
+       96,
+       96
+      ],
+      "dfi_alive": [
+       21,
+       0
+      ],
+      "dfi_at": [
+       20,
+       0
+      ],
+      "dfi_attract_update": [
+       243,
+       243
+      ],
+      "dfi_battle_step_observed": [
+       1309,
+       1309
+      ],
+      "dfi_before_move": [
+       1056,
+       1038
+      ],
+      "dfi_boost": [
+       3492,
+       3475
+      ],
+      "dfi_bounce": [
+       1034,
+       1034
+      ],
+      "dfi_bug_bite": [
+       331,
+       334
+      ],
+      "dfi_clear_terrain": [
+       67,
+       578
+      ],
+      "dfi_closure_battle_supported": [
+       119,
+       121
+      ],
+      "dfi_cute_charm": [
+       225,
+       225
+      ],
+      "dfi_deal": [
+       193,
+       197
+      ],
+      "dfi_double_shock_self": [
+       179,
+       0
+      ],
+      "dfi_drag_blocked": [
+       148,
+       146
+      ],
+      "dfi_entry_ability": [
+       1120,
+       1052
+      ],
+      "dfi_fails_skillswap": [
+       200,
+       204
+      ],
+      "dfi_flame_body": [
+       102,
+       102
+      ],
+      "dfi_flower_veil_holder": [
+       152,
+       155
+      ],
+      "dfi_get_damage": [
+       4973,
+       5073
+      ],
+      "dfi_gooey": [
+       131,
+       125
+      ],
+      "dfi_has_entry": [
+       125,
+       124
+      ],
+      "dfi_has_type": [
+       195,
+       0
+      ],
+      "dfi_hazard_move": [
+       117,
+       0
+      ],
+      "dfi_herb_due": [
+       90,
+       92
+      ],
+      "dfi_herb_event": [
+       512,
+       525
+      ],
+      "dfi_herbs_matter": [
+       307,
+       309
+      ],
+      "dfi_holds": [
+       45,
+       0
+      ],
+      "dfi_hospitality": [
+       78,
+       78
+      ],
+      "dfi_invulnerable_to": [
+       312,
+       310
+      ],
+      "dfi_item_code": [
+       79,
+       0
+      ],
+      "dfi_item_start_shown": [
+       108,
+       121
+      ],
+      "dfi_knock_off": [
+       349,
+       354
+      ],
+      "dfi_leaf_guard_sun": [
+       211,
+       206
+      ],
+      "dfi_lum_berry": [
+       215,
+       103
+      ],
+      "dfi_move_priority": [
+       125,
+       134
+      ],
+      "dfi_move_type_now": [
+       210,
+       210
+      ],
+      "dfi_piercing_drill_passes": [
+       49,
+       49
+      ],
+      "dfi_place": [
+       81,
+       83
+      ],
+      "dfi_poison_point": [
+       102,
+       104
+      ],
+      "dfi_poison_touch": [
+       103,
+       104
+      ],
+      "dfi_protect_targets": [
+       361,
+       361
+      ],
+      "dfi_red_card": [
+       193,
+       0
+      ],
+      "dfi_residual_events_run": [
+       4134,
+       4189
+      ],
+      "dfi_run_after_you": [
+       354,
+       0
+      ],
+      "dfi_run_ally_switch": [
+       574,
+       570
+      ],
+      "dfi_run_curse": [
+       398,
+       400
+      ],
+      "dfi_run_entries": [
+       2225,
+       2199
+      ],
+      "dfi_run_heal_fraction": [
+       590,
+       582
+      ],
+      "dfi_run_heal_pulse": [
+       48,
+       0
+      ],
+      "dfi_run_move_body": [
+       8517,
+       10846
+      ],
+      "dfi_run_quash": [
+       321,
+       0
+      ],
+      "dfi_run_strength_sap": [
+       137,
+       0
+      ],
+      "dfi_set_held": [
+       40,
+       39
+      ],
+      "dfi_sf_strips": [
+       57,
+       55
+      ],
+      "dfi_side_lists": [
+       1145,
+       1150
+      ],
+      "dfi_skill_swap": [
+       487,
+       0
+      ],
+      "dfi_skill_swap_start": [
+       103,
+       104
+      ],
+      "dfi_speed_key": [
+       447,
+       450
+      ],
+      "dfi_spicy_spray": [
+       75,
+       69
+      ],
+      "dfi_static": [
+       102,
+       104
+      ],
+      "dfi_status_effects": [
+       2959,
+       2828
+      ],
+      "dfi_stone_refused_for": [
+       65,
+       0
+      ],
+      "dfi_sturdy_saves": [
+       137,
+       135
+      ],
+      "dfi_substitute_takes": [
+       464,
+       468
+      ],
+      "dfi_switch_in": [
+       1950,
+       1935
+      ],
+      "dfi_symbiosis": [
+       425,
+       429
+      ],
+      "dfi_terrain_change": [
+       524,
+       525
+      ],
+      "dfi_thief": [
+       506,
+       510
+      ],
+      "dfi_toxic_debris": [
+       140,
+       133
+      ],
+      "dfi_trick": [
+       0,
+       857
+      ],
+      "dfi_try_hit_abilities": [
+       1809,
+       1792
+      ],
+      "dfi_try_status": [
+       963,
+       963
+      ],
+      "dfi_turn_run": [
+       4060,
+       4094
+      ],
+      "dfi_unburden_on_take": [
+       64,
+       62
+      ],
+      "dfi_unnerved": [
+       117,
+       120
+      ],
+      "dfi_update": [
+       762,
+       763
+      ],
+      "dfi_use_item_core": [
+       215,
+       215
+      ],
+      "dfi_weather_heal": [
+       283,
+       287
+      ],
+      "dfi_weather_suppression_scan": [
+       291,
+       291
+      ]
+     },
+     "rename_only": []
+    },
+    "exclusive_delta_top": [
+     [
+      "dfi_run_move_body",
+      23126445
+     ],
+     [
+      "dfi_ability",
+      -11057485
+     ],
+     [
+      "dfi_holds",
+      -8899740
+     ],
+     [
+      "dfi_at",
+      -6780225
+     ],
+     [
+      "dfi_red_card",
+      -3915285
+     ],
+     [
+      "dfi_emit",
+      -3652740
+     ],
+     [
+      "dfi_item_code",
+      -1795700
+     ],
+     [
+      "dfi_accuracy_check",
+      1589505
+     ],
+     [
+      "dfi_get_damage",
+      985500
+     ],
+     [
+      "dfi_herb_event",
+      554290
+     ]
+    ],
+    "functions": {},
+    "ir_total": [
+     3732434647,
+     3723755404
+    ],
+    "ir_total_ratio": 0.9976746430089604,
+    "pass": true
+   },
+   "noipo": {
+    "code_diff": {
+     "clones": {
+      "dfi_ability": {
+       "after": [],
+       "before": [
+        "dfi_ability"
+       ]
+      },
+      "dfi_accuracy_check": {
+       "after": [
+        "dfi_accuracy_check"
+       ],
+       "before": [
+        "dfi_accuracy_check"
+       ]
+      },
+      "dfi_accuracy_targets": {
+       "after": [
+        "dfi_accuracy_targets"
+       ],
+       "before": [
+        "dfi_accuracy_targets"
+       ]
+      },
+      "dfi_add_volatile": {
+       "after": [
+        "dfi_add_volatile"
+       ],
+       "before": [
+        "dfi_add_volatile"
+       ]
+      },
+      "dfi_after_faint": {
+       "after": [
+        "dfi_after_faint"
+       ],
+       "before": [
+        "dfi_after_faint"
+       ]
+      },
+      "dfi_alive": {
+       "after": [],
+       "before": [
+        "dfi_alive"
+       ]
+      },
+      "dfi_at": {
+       "after": [],
+       "before": [
+        "dfi_at"
+       ]
+      },
+      "dfi_attract_update": {
+       "after": [
+        "dfi_attract_update"
+       ],
+       "before": [
+        "dfi_attract_update"
+       ]
+      },
+      "dfi_before_move": {
+       "after": [
+        "dfi_before_move",
+        "dfi_before_move.cold"
+       ],
+       "before": [
+        "dfi_before_move",
+        "dfi_before_move.cold"
+       ]
+      },
+      "dfi_boost": {
+       "after": [
+        "dfi_boost.isra.0",
+        "dfi_boost.isra.0.cold"
+       ],
+       "before": [
+        "dfi_boost.isra.0",
+        "dfi_boost.isra.0.cold"
+       ]
+      },
+      "dfi_bounce": {
+       "after": [
+        "dfi_bounce"
+       ],
+       "before": [
+        "dfi_bounce"
+       ]
+      },
+      "dfi_bug_bite": {
+       "after": [],
+       "before": [
+        "dfi_bug_bite"
+       ]
+      },
+      "dfi_clear_terrain": {
+       "after": [
+        "dfi_clear_terrain"
+       ],
+       "before": [
+        "dfi_clear_terrain"
+       ]
+      },
+      "dfi_cute_charm": {
+       "after": [
+        "dfi_cute_charm.isra.0"
+       ],
+       "before": [
+        "dfi_cute_charm.isra.0"
+       ]
+      },
+      "dfi_deal": {
+       "after": [
+        "dfi_deal"
+       ],
+       "before": [
+        "dfi_deal"
+       ]
+      },
+      "dfi_drag_blocked": {
+       "after": [
+        "dfi_drag_blocked"
+       ],
+       "before": [
+        "dfi_drag_blocked"
+       ]
+      },
+      "dfi_entry_ability": {
+       "after": [
+        "dfi_entry_ability",
+        "dfi_entry_ability.cold"
+       ],
+       "before": [
+        "dfi_entry_ability",
+        "dfi_entry_ability.cold"
+       ]
+      },
+      "dfi_fails_skillswap": {
+       "after": [
+        "dfi_fails_skillswap"
+       ],
+       "before": [
+        "dfi_fails_skillswap"
+       ]
+      },
+      "dfi_flame_body": {
+       "after": [
+        "dfi_flame_body.isra.0"
+       ],
+       "before": [
+        "dfi_flame_body.isra.0"
+       ]
+      },
+      "dfi_flower_veil_holder": {
+       "after": [
+        "dfi_flower_veil_holder"
+       ],
+       "before": [
+        "dfi_flower_veil_holder"
+       ]
+      },
+      "dfi_get_damage": {
+       "after": [
+        "dfi_get_damage"
+       ],
+       "before": [
+        "dfi_get_damage"
+       ]
+      },
+      "dfi_gooey": {
+       "after": [
+        "dfi_gooey.isra.0"
+       ],
+       "before": [
+        "dfi_gooey.isra.0"
+       ]
+      },
+      "dfi_has_type": {
+       "after": [],
+       "before": [
+        "dfi_has_type"
+       ]
+      },
+      "dfi_herb_due": {
+       "after": [
+        "dfi_herb_due"
+       ],
+       "before": [
+        "dfi_herb_due"
+       ]
+      },
+      "dfi_holds": {
+       "after": [],
+       "before": [
+        "dfi_holds"
+       ]
+      },
+      "dfi_illusion_lead_disguise": {
+       "after": [
+        "dfi_illusion_lead_disguise"
+       ],
+       "before": [
+        "dfi_illusion_lead_disguise"
+       ]
+      },
+      "dfi_invulnerable_to": {
+       "after": [
+        "dfi_invulnerable_to.isra.0"
+       ],
+       "before": [
+        "dfi_invulnerable_to.isra.0"
+       ]
+      },
+      "dfi_item_code": {
+       "after": [],
+       "before": [
+        "dfi_item_code",
+        "dfi_item_code.part.0"
+       ]
+      },
+      "dfi_leaf_guard_sun": {
+       "after": [
+        "dfi_leaf_guard_sun"
+       ],
+       "before": [
+        "dfi_leaf_guard_sun"
+       ]
+      },
+      "dfi_lum_berry": {
+       "after": [
+        "dfi_lum_berry"
+       ],
+       "before": [
+        "dfi_lum_berry"
+       ]
+      },
+      "dfi_move_priority": {
+       "after": [
+        "dfi_move_priority"
+       ],
+       "before": [
+        "dfi_move_priority"
+       ]
+      },
+      "dfi_move_type_now": {
+       "after": [
+        "dfi_move_type_now"
+       ],
+       "before": [
+        "dfi_move_type_now"
+       ]
+      },
+      "dfi_piercing_drill_passes": {
+       "after": [
+        "dfi_piercing_drill_passes"
+       ],
+       "before": [
+        "dfi_piercing_drill_passes"
+       ]
+      },
+      "dfi_poison_point": {
+       "after": [
+        "dfi_poison_point.isra.0"
+       ],
+       "before": [
+        "dfi_poison_point.isra.0"
+       ]
+      },
+      "dfi_poison_touch": {
+       "after": [
+        "dfi_poison_touch.isra.0"
+       ],
+       "before": [
+        "dfi_poison_touch.isra.0"
+       ]
+      },
+      "dfi_protect_targets": {
+       "after": [
+        "dfi_protect_targets"
+       ],
+       "before": [
+        "dfi_protect_targets"
+       ]
+      },
+      "dfi_residual_events_run": {
+       "after": [
+        "dfi_residual_events_run.constprop.0",
+        "dfi_residual_events_run.constprop.0.cold"
+       ],
+       "before": [
+        "dfi_residual_events_run.constprop.0",
+        "dfi_residual_events_run.constprop.0.cold"
+       ]
+      },
+      "dfi_residual_order_changes_outcome": {
+       "after": [],
+       "before": [
+        "dfi_residual_order_changes_outcome"
+       ]
+      },
+      "dfi_run_curse": {
+       "after": [
+        "dfi_run_curse",
+        "dfi_run_curse.cold"
+       ],
+       "before": [
+        "dfi_run_curse",
+        "dfi_run_curse.cold"
+       ]
+      },
+      "dfi_run_entries": {
+       "after": [
+        "dfi_run_entries"
+       ],
+       "before": [
+        "dfi_run_entries"
+       ]
+      },
+      "dfi_run_heal_fraction": {
+       "after": [
+        "dfi_run_heal_fraction"
+       ],
+       "before": [
+        "dfi_run_heal_fraction"
+       ]
+      },
+      "dfi_run_move_body": {
+       "after": [
+        "dfi_run_move_body.constprop.0",
+        "dfi_run_move_body.constprop.0.cold"
+       ],
+       "before": [
+        "dfi_run_move_body.constprop.0",
+        "dfi_run_move_body.constprop.0.cold"
+       ]
+      },
+      "dfi_sf_strips": {
+       "after": [
+        "dfi_sf_strips"
+       ],
+       "before": [
+        "dfi_sf_strips"
+       ]
+      },
+      "dfi_skill_swap_decision": {
+       "after": [
+        "dfi_skill_swap_decision"
+       ],
+       "before": [
+        "dfi_skill_swap_decision"
+       ]
+      },
+      "dfi_speed_key": {
+       "after": [
+        "dfi_speed_key"
+       ],
+       "before": [
+        "dfi_speed_key"
+       ]
+      },
+      "dfi_spicy_spray": {
+       "after": [
+        "dfi_spicy_spray"
+       ],
+       "before": [
+        "dfi_spicy_spray"
+       ]
+      },
+      "dfi_static": {
+       "after": [
+        "dfi_static.isra.0"
+       ],
+       "before": [
+        "dfi_static.isra.0"
+       ]
+      },
+      "dfi_status_effects": {
+       "after": [
+        "dfi_status_effects",
+        "dfi_status_effects.cold"
+       ],
+       "before": [
+        "dfi_status_effects",
+        "dfi_status_effects.cold"
+       ]
+      },
+      "dfi_substitute_takes": {
+       "after": [
+        "dfi_substitute_takes"
+       ],
+       "before": [
+        "dfi_substitute_takes"
+       ]
+      },
+      "dfi_switch_in": {
+       "after": [
+        "dfi_switch_in.constprop.0",
+        "dfi_switch_in.constprop.0.cold"
+       ],
+       "before": [
+        "dfi_switch_in.constprop.0",
+        "dfi_switch_in.constprop.0.cold"
+       ]
+      },
+      "dfi_switch_trapped": {
+       "after": [
+        "dfi_switch_trapped"
+       ],
+       "before": [
+        "dfi_switch_trapped"
+       ]
+      },
+      "dfi_symbiosis": {
+       "after": [
+        "dfi_symbiosis"
+       ],
+       "before": [
+        "dfi_symbiosis"
+       ]
+      },
+      "dfi_terrain_change": {
+       "after": [
+        "dfi_terrain_change"
+       ],
+       "before": [
+        "dfi_terrain_change"
+       ]
+      },
+      "dfi_thief": {
+       "after": [
+        "dfi_thief"
+       ],
+       "before": [
+        "dfi_thief"
+       ]
+      },
+      "dfi_toxic_debris": {
+       "after": [
+        "dfi_toxic_debris.isra.0"
+       ],
+       "before": [
+        "dfi_toxic_debris.isra.0"
+       ]
+      },
+      "dfi_try_hit_abilities": {
+       "after": [
+        "dfi_try_hit_abilities"
+       ],
+       "before": [
+        "dfi_try_hit_abilities"
+       ]
+      },
+      "dfi_try_status": {
+       "after": [
+        "dfi_try_status"
+       ],
+       "before": [
+        "dfi_try_status"
+       ]
+      },
+      "dfi_turn_run": {
+       "after": [
+        "dfi_turn_run"
+       ],
+       "before": [
+        "dfi_turn_run"
+       ]
+      },
+      "dfi_unburden_on_take": {
+       "after": [
+        "dfi_unburden_on_take"
+       ],
+       "before": [
+        "dfi_unburden_on_take"
+       ]
+      },
+      "dfi_unnerved": {
+       "after": [
+        "dfi_unnerved"
+       ],
+       "before": [
+        "dfi_unnerved"
+       ]
+      },
+      "dfi_update": {
+       "after": [
+        "dfi_update",
+        "dfi_update.cold"
+       ],
+       "before": [
+        "dfi_update",
+        "dfi_update.cold"
+       ]
+      },
+      "dfi_use_item_core": {
+       "after": [
+        "dfi_use_item_core"
+       ],
+       "before": [
+        "dfi_use_item_core"
+       ]
+      },
+      "dfi_weather_heal": {
+       "after": [
+        "dfi_weather_heal",
+        "dfi_weather_heal.cold"
+       ],
+       "before": [
+        "dfi_weather_heal",
+        "dfi_weather_heal.cold"
+       ]
+      },
+      "dfi_weather_suppression_scan": {
+       "after": [
+        "dfi_weather_suppression_scan"
+       ],
+       "before": [
+        "dfi_weather_suppression_scan"
+       ]
+      }
+     },
+     "differing_groups": [
+      "dfi_ability",
+      "dfi_accuracy_check",
+      "dfi_accuracy_targets",
+      "dfi_add_volatile",
+      "dfi_after_faint",
+      "dfi_alive",
+      "dfi_at",
+      "dfi_attract_update",
+      "dfi_before_move",
+      "dfi_boost",
+      "dfi_bounce",
+      "dfi_bug_bite",
+      "dfi_clear_terrain",
+      "dfi_cute_charm",
+      "dfi_deal",
+      "dfi_drag_blocked",
+      "dfi_entry_ability",
+      "dfi_fails_skillswap",
+      "dfi_flame_body",
+      "dfi_flower_veil_holder",
+      "dfi_get_damage",
+      "dfi_gooey",
+      "dfi_has_type",
+      "dfi_herb_due",
+      "dfi_holds",
+      "dfi_illusion_lead_disguise",
+      "dfi_invulnerable_to",
+      "dfi_item_code",
+      "dfi_leaf_guard_sun",
+      "dfi_lum_berry",
+      "dfi_move_priority",
+      "dfi_move_type_now",
+      "dfi_piercing_drill_passes",
+      "dfi_poison_point",
+      "dfi_poison_touch",
+      "dfi_protect_targets",
+      "dfi_residual_events_run",
+      "dfi_residual_order_changes_outcome",
+      "dfi_run_curse",
+      "dfi_run_entries",
+      "dfi_run_heal_fraction",
+      "dfi_run_move_body",
+      "dfi_sf_strips",
+      "dfi_skill_swap_decision",
+      "dfi_speed_key",
+      "dfi_spicy_spray",
+      "dfi_static",
+      "dfi_status_effects",
+      "dfi_substitute_takes",
+      "dfi_switch_in",
+      "dfi_switch_trapped",
+      "dfi_symbiosis",
+      "dfi_terrain_change",
+      "dfi_thief",
+      "dfi_toxic_debris",
+      "dfi_try_hit_abilities",
+      "dfi_try_status",
+      "dfi_turn_run",
+      "dfi_unburden_on_take",
+      "dfi_unnerved",
+      "dfi_update",
+      "dfi_use_item_core",
+      "dfi_weather_heal",
+      "dfi_weather_suppression_scan"
+     ],
+     "functions": [
+      461,
+      452
+     ],
+     "groups": 442,
+     "instructions": {
+      "dfi_ability": [
+       41,
+       0
+      ],
+      "dfi_accuracy_check": [
+       748,
+       788
+      ],
+      "dfi_accuracy_targets": [
+       1293,
+       1276
+      ],
+      "dfi_add_volatile": [
+       146,
+       148
+      ],
+      "dfi_after_faint": [
+       96,
+       96
+      ],
+      "dfi_alive": [
+       20,
+       0
+      ],
+      "dfi_at": [
+       19,
+       0
+      ],
+      "dfi_attract_update": [
+       221,
+       221
+      ],
+      "dfi_before_move": [
+       997,
+       997
+      ],
+      "dfi_boost": [
+       3444,
+       3510
+      ],
+      "dfi_bounce": [
+       992,
+       993
+      ],
+      "dfi_bug_bite": [
+       322,
+       0
+      ],
+      "dfi_clear_terrain": [
+       57,
+       565
+      ],
+      "dfi_cute_charm": [
+       226,
+       224
+      ],
+      "dfi_deal": [
+       220,
+       220
+      ],
+      "dfi_drag_blocked": [
+       139,
+       137
+      ],
+      "dfi_entry_ability": [
+       1126,
+       993
+      ],
+      "dfi_fails_skillswap": [
+       200,
+       203
+      ],
+      "dfi_flame_body": [
+       101,
+       102
+      ],
+      "dfi_flower_veil_holder": [
+       151,
+       154
+      ],
+      "dfi_get_damage": [
+       4791,
+       4858
+      ],
+      "dfi_gooey": [
+       121,
+       115
+      ],
+      "dfi_has_type": [
+       164,
+       0
+      ],
+      "dfi_herb_due": [
+       90,
+       92
+      ],
+      "dfi_holds": [
+       44,
+       0
+      ],
+      "dfi_illusion_lead_disguise": [
+       167,
+       167
+      ],
+      "dfi_invulnerable_to": [
+       311,
+       309
+      ],
+      "dfi_item_code": [
+       77,
+       0
+      ],
+      "dfi_leaf_guard_sun": [
+       203,
+       205
+      ],
+      "dfi_lum_berry": [
+       215,
+       103
+      ],
+      "dfi_move_priority": [
+       121,
+       120
+      ],
+      "dfi_move_type_now": [
+       209,
+       207
+      ],
+      "dfi_piercing_drill_passes": [
+       48,
+       48
+      ],
+      "dfi_poison_point": [
+       101,
+       103
+      ],
+      "dfi_poison_touch": [
+       101,
+       103
+      ],
+      "dfi_protect_targets": [
+       385,
+       385
+      ],
+      "dfi_residual_events_run": [
+       4138,
+       5382
+      ],
+      "dfi_residual_order_changes_outcome": [
+       1202,
+       0
+      ],
+      "dfi_run_curse": [
+       405,
+       407
+      ],
+      "dfi_run_entries": [
+       2183,
+       2177
+      ],
+      "dfi_run_heal_fraction": [
+       611,
+       600
+      ],
+      "dfi_run_move_body": [
+       9099,
+       10838
+      ],
+      "dfi_sf_strips": [
+       56,
+       54
+      ],
+      "dfi_skill_swap_decision": [
+       230,
+       224
+      ],
+      "dfi_speed_key": [
+       469,
+       472
+      ],
+      "dfi_spicy_spray": [
+       74,
+       68
+      ],
+      "dfi_static": [
+       101,
+       103
+      ],
+      "dfi_status_effects": [
+       4516,
+       4509
+      ],
+      "dfi_substitute_takes": [
+       484,
+       488
+      ],
+      "dfi_switch_in": [
+       1890,
+       1894
+      ],
+      "dfi_switch_trapped": [
+       217,
+       216
+      ],
+      "dfi_symbiosis": [
+       403,
+       403
+      ],
+      "dfi_terrain_change": [
+       522,
+       523
+      ],
+      "dfi_thief": [
+       484,
+       483
+      ],
+      "dfi_toxic_debris": [
+       130,
+       123
+      ],
+      "dfi_try_hit_abilities": [
+       1831,
+       1817
+      ],
+      "dfi_try_status": [
+       991,
+       963
+      ],
+      "dfi_turn_run": [
+       3905,
+       3920
+      ],
+      "dfi_unburden_on_take": [
+       63,
+       62
+      ],
+      "dfi_unnerved": [
+       116,
+       120
+      ],
+      "dfi_update": [
+       847,
+       847
+      ],
+      "dfi_use_item_core": [
+       208,
+       205
+      ],
+      "dfi_weather_heal": [
+       281,
+       284
+      ],
+      "dfi_weather_suppression_scan": [
+       290,
+       290
+      ]
+     },
+     "rename_only": []
+    },
+    "exclusive_delta_top": [
+     [
+      "dfi_run_move_body",
+      17823735
+     ],
+     [
+      "dfi_ability",
+      -10736790
+     ],
+     [
+      "dfi_holds",
+      -8644385
+     ],
+     [
+      "dfi_at",
+      -6328210
+     ],
+     [
+      "dfi_residual_events_run",
+      2236110
+     ],
+     [
+      "dfi_item_code",
+      -1737855
+     ],
+     [
+      "dfi_accuracy_check",
+      1528840
+     ],
+     [
+      "dfi_get_damage",
+      456550
+     ],
+     [
+      "dfi_switch_trapped",
+      -267195
+     ],
+     [
+      "dfi_flame_body",
+      197780
+     ]
+    ],
+    "functions": {},
+    "ir_total": [
+     4047858939,
+     4043171938
+    ],
+    "ir_total_ratio": 0.9988421036724274,
+    "pass": true
+   }
+  },
+  "workload": [
+   "--battles",
+   "128",
+   "--repetitions",
+   "1",
+   "--warmup",
+   "0",
+   "--max-steps",
+   "128",
+   "--policy-seed",
+   "20261001",
+   "--battle-seed",
+   "7001",
+   "--families",
+   "step,events",
+   "--workers",
+   "1"
+  ]
+ },
+ "changed_files": [
+  "docs/benchmarks/2026-10-23-restructure-inline-helpers/frames.py",
+  "docs/benchmarks/2026-10-23-restructure-inline-helpers/machine.json",
+  "docs/benchmarks/2026-10-23-restructure-inline-helpers/proofs.py",
+  "docs/benchmarks/2026-10-23-restructure-inline-helpers/summarize.py",
+  "src/combat/abilities/current.h",
+  "src/combat/items/held.h",
+  "src/combat/run_internal.h",
+  "src/combat/turn.c"
+ ],
+ "frames": {
+  "after": {
+   "commit": "664830c707ca9231e9691d6431b9c8b112c80691",
+   "ipo": {
+    "frames": {
+     "bench:dfb_episode_pass.constprop": 2528,
+     "bench:dfb_replay.constprop": 176,
+     "bench:dfb_request_pass": 912,
+     "bench:dfb_snapshot.constprop": 160,
+     "bench:dfb_snapshot_pass": 112,
+     "bench:dfb_step_core.constprop": 240,
+     "bench:dfb_tally_reset": 8,
+     "bench:dfb_tapes_destroy.part.0": 32,
+     "bench:dfi_accuracy_check": 128,
+     "bench:dfi_accuracy_targets": 240,
+     "bench:dfi_add_hazard": 96,
+     "bench:dfi_add_volatile": 80,
+     "bench:dfi_after_faint": 64,
+     "bench:dfi_announce_faints": 144,
+     "bench:dfi_attract_update": 144,
+     "bench:dfi_battle_step_observed.constprop": 13408,
+     "bench:dfi_before_move": 352,
+     "bench:dfi_boost.isra": 464,
+     "bench:dfi_bounce": 304,
+     "bench:dfi_bug_bite": 160,
+     "bench:dfi_can_switch": 8,
+     "bench:dfi_chain_modify": 8,
+     "bench:dfi_check_member": 144,
+     "bench:dfi_check_tail": 560,
+     "bench:dfi_choice_lock_ends": 8,
+     "bench:dfi_clear_terrain": 176,
+     "bench:dfi_closure_battle_supported.constprop": 40,
+     "bench:dfi_closure_member_derive": 8,
+     "bench:dfi_closure_member_forme_stats": 16,
+     "bench:dfi_closure_member_ranges": 24,
+     "bench:dfi_cursed_body": 48,
+     "bench:dfi_cute_charm.isra": 144,
+     "bench:dfi_deal": 208,
+     "bench:dfi_derive_stats": 16,
+     "bench:dfi_disable_start": 112,
+     "bench:dfi_double_shock_try": 80,
+     "bench:dfi_drag_at_hit": 32,
+     "bench:dfi_drag_blocked": 80,
+     "bench:dfi_draw.part.0": 40,
+     "bench:dfi_draw_chance": 40,
+     "bench:dfi_each_order.constprop": 128,
+     "bench:dfi_emergency_exit": 96,
+     "bench:dfi_emit": 32,
+     "bench:dfi_emit_hp": 64,
+     "bench:dfi_emit_plain": 80,
+     "bench:dfi_encode_unchecked": 48,
+     "bench:dfi_encore_replace": 160,
+     "bench:dfi_entry_ability": 192,
+     "bench:dfi_enumerate_side.constprop": 672,
+     "bench:dfi_ev": 80,
+     "bench:dfi_ev.constprop": 80,
+     "bench:dfi_events_fit": 8,
+     "bench:dfi_events_fold_knowledge": 464,
+     "bench:dfi_events_write.part.0": 32,
+     "bench:dfi_fail_line": 80,
+     "bench:dfi_fail_still": 80,
+     "bench:dfi_fails_skillswap": 8,
+     "bench:dfi_field_start_turns": 8,
+     "bench:dfi_flame_body.isra": 64,
+     "bench:dfi_flower_veil_block": 80,
+     "bench:dfi_flower_veil_holder": 64,
+     "bench:dfi_get_damage": 384,
+     "bench:dfi_gooey.isra": 128,
+     "bench:dfi_grounded_test": 48,
+     "bench:dfi_has_entry": 8,
+     "bench:dfi_heal": 144,
+     "bench:dfi_herb_due": 8,
+     "bench:dfi_herb_event": 144,
+     "bench:dfi_herbs_matter": 48,
+     "bench:dfi_hospitality": 112,
+     "bench:dfi_immune": 80,
+     "bench:dfi_invulnerable_to.isra": 64,
+     "bench:dfi_item_start_shown": 80,
+     "bench:dfi_key_of": 96,
+     "bench:dfi_kind_limits_of": 8,
+     "bench:dfi_knock_off": 112,
+     "bench:dfi_last_move": 8,
+     "bench:dfi_leaf_guard_sun": 24,
+     "bench:dfi_lum_berry": 32,
+     "bench:dfi_lum_cure": 128,
+     "bench:dfi_mega_of": 8,
+     "bench:dfi_move_of": 8,
+     "bench:dfi_move_priority": 64,
+     "bench:dfi_move_targets": 48,
+     "bench:dfi_move_type_now": 32,
+     "bench:dfi_move_weather": 16,
+     "bench:dfi_no_target_or_try.isra": 112,
+     "bench:dfi_observation_capture": 16,
+     "bench:dfi_observation_error.part.0": 48,
+     "bench:dfi_pair_allowed": 8,
+     "bench:dfi_piercing_drill_passes": 8,
+     "bench:dfi_place.constprop": 64,
+     "bench:dfi_play_episode": 2704,
+     "bench:dfi_play_slice": 160,
+     "bench:dfi_poison_point.isra": 64,
+     "bench:dfi_poison_touch.isra": 64,
+     "bench:dfi_pool_destroy.part.0": 48,
+     "bench:dfi_process_faints": 144,
+     "bench:dfi_protect_targets": 256,
+     "bench:dfi_put_team": 8,
+     "bench:dfi_random_foe": 48,
+     "bench:dfi_residual_events_run.constprop": 3040,
+     "bench:dfi_residual_order_changes_outcome": 10544,
+     "bench:dfi_residual_sort": 608,
+     "bench:dfi_resolve_target": 48,
+     "bench:dfi_run_ally_switch": 192,
+     "bench:dfi_run_curse": 224,
+     "bench:dfi_run_entries": 352,
+     "bench:dfi_run_follow_me": 80,
+     "bench:dfi_run_heal_fraction": 208,
+     "bench:dfi_run_move_body": 752,
+     "bench:dfi_run_protect": 96,
+     "bench:dfi_semi_invulnerable.isra": 8,
+     "bench:dfi_set_held": 8,
+     "bench:dfi_sf_strips": 8,
+     "bench:dfi_sha256": 400,
+     "bench:dfi_sha256_block": 368,
+     "bench:dfi_sha256_update": 80,
+     "bench:dfi_side_lists.constprop": 224,
+     "bench:dfi_skill_swap_start": 32,
+     "bench:dfi_sort_front": 320,
+     "bench:dfi_speed_key": 64,
+     "bench:dfi_spicy_spray": 32,
+     "bench:dfi_state_check_mode": 336,
+     "bench:dfi_static.isra": 64,
+     "bench:dfi_status_effects": 400,
+     "bench:dfi_status_hit_end": 16,
+     "bench:dfi_sturdy_saves.isra": 112,
+     "bench:dfi_substitute_takes": 208,
+     "bench:dfi_swap": 16,
+     "bench:dfi_switch_in.constprop": 560,
+     "bench:dfi_symbiosis": 160,
+     "bench:dfi_tail_clear_occupant.part.0": 152,
+     "bench:dfi_terminal": 96,
+     "bench:dfi_terrain_change": 144,
+     "bench:dfi_thief": 176,
+     "bench:dfi_thread_main": 96,
+     "bench:dfi_toxic_debris.isra": 112,
+     "bench:dfi_trick": 224,
+     "bench:dfi_try_hit_abilities": 256,
+     "bench:dfi_try_status": 256,
+     "bench:dfi_turn_run.constprop": 592,
+     "bench:dfi_types_of": 32,
+     "bench:dfi_unburden_on_take": 8,
+     "bench:dfi_unnerved": 8,
+     "bench:dfi_update": 240,
+     "bench:dfi_use_item": 32,
+     "bench:dfi_use_item_core": 144,
+     "bench:dfi_volatile_end": 80,
+     "bench:dfi_weather_heal": 96,
+     "bench:dfi_weather_suppression_scan": 16,
+     "bench:dfi_will_move": 8,
+     "bench:dfi_win_result": 8,
+     "bench:dfi_write_envelope.constprop": 8,
+     "bench:duoforge_battle_candidates.part.0.constprop": 144,
+     "bench:duoforge_battle_create.part.0": 3760,
+     "bench:duoforge_battle_decode.part.0": 2992,
+     "bench:duoforge_battle_digest.part.0": 1440,
+     "bench:duoforge_battle_observe.part.0": 952,
+     "bench:duoforge_reference_setup.part.0.constprop": 1120,
+     "bench:json_string": 32,
+     "bench:main": 15008,
+     "bench:usage": 16,
+     "bench:write_result.constprop": 912,
+     "bench:write_tally": 176,
+     "library:dfi_accuracy_check": 128,
+     "library:dfi_accuracy_targets": 272,
+     "library:dfi_add_hazard": 96,
+     "library:dfi_add_volatile": 128,
+     "library:dfi_after_faint": 64,
+     "library:dfi_alloc_zeroed": 8,
+     "library:dfi_allocate": 8,
+     "library:dfi_ally_swap_wish_blocked": 8,
+     "library:dfi_announce_faints": 144,
+     "library:dfi_apply_team_selection": 1552,
+     "library:dfi_attract_source_flat": 8,
+     "library:dfi_attract_update": 144,
+     "library:dfi_base_damage": 8,
+     "library:dfi_batch_context": 8,
+     "library:dfi_batch_each": 80,
+     "library:dfi_batch_leaves": 48,
+     "library:dfi_batch_make.constprop": 1120,
+     "library:dfi_batch_query_player": 112,
+     "library:dfi_batch_reset_with": 1168,
+     "library:dfi_battle_build": 2560,
+     "library:dfi_battle_create_ungated": 8,
+     "library:dfi_battle_create_ungated.part.0": 1168,
+     "library:dfi_battle_step_events_tape": 48,
+     "library:dfi_battle_step_observed": 12016,
+     "library:dfi_battle_step_tape": 32,
+     "library:dfi_battle_tiebreak_report": 32,
+     "library:dfi_battle_tiebreak_report.part.0": 688,
+     "library:dfi_before_move": 368,
+     "library:dfi_binding_is_current": 32,
+     "library:dfi_boost.isra": 464,
+     "library:dfi_bounce": 304,
+     "library:dfi_bug_bite": 176,
+     "library:dfi_can_switch": 8,
+     "library:dfi_chain_modify": 8,
+     "library:dfi_champions_pp_max": 8,
+     "library:dfi_champions_stat": 8,
+     "library:dfi_check_member": 96,
+     "library:dfi_check_tail": 560,
+     "library:dfi_choice_bundle.part.0": 8,
+     "library:dfi_choice_lock_ends": 8,
+     "library:dfi_choice_slice": 160,
+     "library:dfi_clear_terrain": 176,
+     "library:dfi_closure_battle_supported": 64,
+     "library:dfi_closure_canonical_bytes": 24,
+     "library:dfi_closure_member_derive": 48,
+     "library:dfi_closure_member_forme_stats": 48,
+     "library:dfi_closure_member_init": 80,
+     "library:dfi_closure_member_mega_evolve": 96,
+     "library:dfi_closure_member_ranges": 64,
+     "library:dfi_closure_member_setup_valid": 48,
+     "library:dfi_closure_member_valid": 112,
+     "library:dfi_closure_setup_supported": 64,
+     "library:dfi_closure_side_clauses_hold": 8,
+     "library:dfi_context_active": 16,
+     "library:dfi_context_canonical_bytes": 8,
+     "library:dfi_context_fingerprint_matches": 8,
+     "library:dfi_context_has_pool_tail": 8,
+     "library:dfi_context_is_closure": 8,
+     "library:dfi_context_is_pool": 8,
+     "library:dfi_context_pick_count": 16,
+     "library:dfi_context_singles": 8,
+     "library:dfi_crit_damage": 8,
+     "library:dfi_current_binding": 32,
+     "library:dfi_cursed_body": 48,
+     "library:dfi_cute_charm.isra": 160,
+     "library:dfi_data_forme_info": 224,
+     "library:dfi_data_mega_at": 96,
+     "library:dfi_data_mega_count": 48,
+     "library:dfi_data_supported": 8,
+     "library:dfi_deal": 224,
+     "library:dfi_decode_state": 1616,
+     "library:dfi_disable_start": 112,
+     "library:dfi_double_shock_try": 80,
+     "library:dfi_drag_at_hit": 32,
+     "library:dfi_drag_blocked": 96,
+     "library:dfi_draw": 64,
+     "library:dfi_draw_chance": 48,
+     "library:dfi_draws_from_rng": 8,
+     "library:dfi_each_order.constprop": 128,
+     "library:dfi_each_slice": 48,
+     "library:dfi_emergency_exit": 96,
+     "library:dfi_emit": 32,
+     "library:dfi_emit_hp": 16,
+     "library:dfi_encode_clear": 8,
+     "library:dfi_encode_env": 1760,
+     "library:dfi_encode_leaf": 5808,
+     "library:dfi_encode_unchecked": 48,
+     "library:dfi_encoder_check": 64,
+     "library:dfi_entry_ability": 208,
+     "library:dfi_enumerate_side.constprop": 672,
+     "library:dfi_ev": 80,
+     "library:dfi_ev.constprop": 80,
+     "library:dfi_eval_error": 48,
+     "library:dfi_event_make": 48,
+     "library:dfi_event_project": 32,
+     "library:dfi_event_set_hp": 8,
+     "library:dfi_event_switch": 80,
+     "library:dfi_events_fit": 8,
+     "library:dfi_events_fold_knowledge": 464,
+     "library:dfi_events_push": 8,
+     "library:dfi_events_write.part.0": 48,
+     "library:dfi_expand": 512,
+     "library:dfi_expand_leaf": 224,
+     "library:dfi_expand_observed": 2416,
+     "library:dfi_expand_report.part.0": 64,
+     "library:dfi_ext_canonical_bytes": 32,
+     "library:dfi_ext_canonical_bytes_of": 152,
+     "library:dfi_ext_slice": 64,
+     "library:dfi_factored_bundle": 8,
+     "library:dfi_fail_line": 96,
+     "library:dfi_fail_still": 96,
+     "library:dfi_fails_skillswap": 8,
+     "library:dfi_field_start_turns": 8,
+     "library:dfi_final_damage": 8,
+     "library:dfi_flame_body.isra": 64,
+     "library:dfi_flower_veil_block": 96,
+     "library:dfi_flower_veil_holder": 64,
+     "library:dfi_forme_ability_legal": 8,
+     "library:dfi_forme_move_legal": 8,
+     "library:dfi_forme_setup_legal": 8,
+     "library:dfi_forme_stone": 8,
+     "library:dfi_free": 8,
+     "library:dfi_from_view_env": 48,
+     "library:dfi_gender_legal": 8,
+     "library:dfi_get_damage": 432,
+     "library:dfi_gooey.isra": 144,
+     "library:dfi_grounded_test": 48,
+     "library:dfi_has_entry": 8,
+     "library:dfi_heal": 160,
+     "library:dfi_herb_due": 8,
+     "library:dfi_herb_event": 160,
+     "library:dfi_herbs_matter": 48,
+     "library:dfi_hospitality": 128,
+     "library:dfi_hp_display": 8,
+     "library:dfi_hp_display_valid": 8,
+     "library:dfi_illusion_disguise_up": 8,
+     "library:dfi_illusion_lead_disguise": 8,
+     "library:dfi_illusion_shown_occupant": 32,
+     "library:dfi_immune": 96,
+     "library:dfi_invariant_name": 8,
+     "library:dfi_invulnerable_to.isra": 64,
+     "library:dfi_item_start_shown": 96,
+     "library:dfi_key_of": 96,
+     "library:dfi_kind_full_roster": 8,
+     "library:dfi_kind_limits_of": 8,
+     "library:dfi_kind_singles": 8,
+     "library:dfi_knock_off": 112,
+     "library:dfi_last_move": 8,
+     "library:dfi_leaf_guard_sun": 32,
+     "library:dfi_leaves_slice": 48,
+     "library:dfi_lum_berry": 32,
+     "library:dfi_lum_cure": 144,
+     "library:dfi_manifest_ability": 8,
+     "library:dfi_manifest_item": 8,
+     "library:dfi_manifest_mega": 8,
+     "library:dfi_manifest_mega_of": 16,
+     "library:dfi_manifest_move": 8,
+     "library:dfi_mega_of": 8,
+     "library:dfi_member_accepted": 80,
+     "library:dfi_member_valid": 8,
+     "library:dfi_mod_fraction": 8,
+     "library:dfi_modify": 8,
+     "library:dfi_move_of": 8,
+     "library:dfi_move_priority": 64,
+     "library:dfi_move_targets": 80,
+     "library:dfi_move_type_now": 32,
+     "library:dfi_move_weather": 16,
+     "library:dfi_no_target_or_try.isra": 112,
+     "library:dfi_observation_capture.part.0": 64,
+     "library:dfi_observation_error.part.0": 48,
+     "library:dfi_observation_finish": 3856,
+     "library:dfi_pair_allowed": 8,
+     "library:dfi_pcg32_accept": 8,
+     "library:dfi_pcg32_output": 8,
+     "library:dfi_pcg32_seed_raw": 48,
+     "library:dfi_pcg32_step": 8,
+     "library:dfi_pcg32_threshold": 8,
+     "library:dfi_piercing_drill_passes": 8,
+     "library:dfi_pivot_of_flag": 8,
+     "library:dfi_pivot_of_move": 8,
+     "library:dfi_place": 80,
+     "library:dfi_play_episode": 928,
+     "library:dfi_play_slice": 160,
+     "library:dfi_poison_point.isra": 64,
+     "library:dfi_poison_touch.isra": 64,
+     "library:dfi_pool_canonical_bytes": 48,
+     "library:dfi_pool_canonical_bytes_of": 80,
+     "library:dfi_pool_create": 64,
+     "library:dfi_pool_destroy": 48,
+     "library:dfi_pool_put_move": 8,
+     "library:dfi_pool_run": 64,
+     "library:dfi_pool_workers": 8,
+     "library:dfi_position_flat": 8,
+     "library:dfi_position_valid": 8,
+     "library:dfi_process_faints": 160,
+     "library:dfi_protect_targets": 256,
+     "library:dfi_public_causes_env": 8,
+     "library:dfi_public_env": 8,
+     "library:dfi_put_team": 8,
+     "library:dfi_query_env": 80,
+     "library:dfi_query_slice": 48,
+     "library:dfi_random_foe": 64,
+     "library:dfi_randomize": 8,
+     "library:dfi_read.constprop": 4720,
+     "library:dfi_release": 8,
+     "library:dfi_reprompt_side": 1408,
+     "library:dfi_res_gate.constprop": 8,
+     "library:dfi_reset_setups_slice": 48,
+     "library:dfi_reset_slice": 48,
+     "library:dfi_residual_events_run.constprop": 3056,
+     "library:dfi_residual_order_changes_outcome": 10544,
+     "library:dfi_residual_sort": 608,
+     "library:dfi_resolve_target": 48,
+     "library:dfi_rng_bounded_u32": 144,
+     "library:dfi_rng_is_valid": 8,
+     "library:dfi_rng_next_u32": 32,
+     "library:dfi_rng_seed": 48,
+     "library:dfi_run_curse": 224,
+     "library:dfi_run_entries": 352,
+     "library:dfi_run_follow_me": 112,
+     "library:dfi_run_heal_fraction": 208,
+     "library:dfi_run_move_body": 752,
+     "library:dfi_run_protect": 160,
+     "library:dfi_semi_invulnerable.isra": 8,
+     "library:dfi_set_held": 8,
+     "library:dfi_sf_strips": 8,
+     "library:dfi_sha256": 144,
+     "library:dfi_sha256_block": 368,
+     "library:dfi_sha256_final": 288,
+     "library:dfi_sha256_update": 80,
+     "library:dfi_side_lists.constprop": 208,
+     "library:dfi_side_occupied_mask": 8,
+     "library:dfi_skill_swap_decision": 64,
+     "library:dfi_skill_swap_start": 64,
+     "library:dfi_slot_clear": 8,
+     "library:dfi_slot_volatile_is_clear": 8,
+     "library:dfi_sort_front": 320,
+     "library:dfi_speed_key": 96,
+     "library:dfi_spicy_spray": 32,
+     "library:dfi_stage_accuracy": 8,
+     "library:dfi_stage_stat": 8,
+     "library:dfi_stat_points_valid": 8,
+     "library:dfi_state_check": 8,
+     "library:dfi_state_check_mode": 368,
+     "library:dfi_state_check_query": 8,
+     "library:dfi_state_check_since": 8,
+     "library:dfi_state_encoded_size_of": 16,
+     "library:dfi_state_schema_of": 16,
+     "library:dfi_static.isra": 64,
+     "library:dfi_status_effects": 464,
+     "library:dfi_status_hit_end": 16,
+     "library:dfi_step_query_slice": 208,
+     "library:dfi_step_slice": 64,
+     "library:dfi_sturdy_saves.isra": 128,
+     "library:dfi_substitute_takes": 224,
+     "library:dfi_swap": 16,
+     "library:dfi_swap_position_state": 80,
+     "library:dfi_switch_in.constprop": 560,
+     "library:dfi_switch_trapped": 80,
+     "library:dfi_symbiosis": 176,
+     "library:dfi_tail_clear_occupant": 144,
+     "library:dfi_target_candidates": 8,
+     "library:dfi_target_class_for_types": 8,
+     "library:dfi_terminal": 96,
+     "library:dfi_terrain_change": 144,
+     "library:dfi_thief": 192,
+     "library:dfi_thread_main": 96,
+     "library:dfi_toxic_debris.isra": 112,
+     "library:dfi_try_hit_abilities": 256,
+     "library:dfi_try_status": 256,
+     "library:dfi_turn_run": 592,
+     "library:dfi_turn_start": 240,
+     "library:dfi_type_damage": 8,
+     "library:dfi_types_of": 48,
+     "library:dfi_u64": 8,
+     "library:dfi_unburden_on_take": 8,
+     "library:dfi_unnerved": 8,
+     "library:dfi_update": 224,
+     "library:dfi_use_item": 32,
+     "library:dfi_use_item_core": 144,
+     "library:dfi_user_target_class": 48,
+     "library:dfi_vacate": 32,
+     "library:dfi_validate.constprop": 256,
+     "library:dfi_version_features.part.0": 144,
+     "library:dfi_view_counter_support": 816,
+     "library:dfi_view_encode.part.0": 528,
+     "library:dfi_view_observation_causes": 96,
+     "library:dfi_view_visible_causes.constprop": 816,
+     "library:dfi_weather_heal": 96,
+     "library:dfi_weather_suppression_scan": 16,
+     "library:dfi_will_move": 8,
+     "library:dfi_win_result": 8,
+     "library:duoforge_batch_create": 80,
+     "library:duoforge_batch_destroy": 32,
+     "library:duoforge_batch_env": 8,
+     "library:duoforge_batch_env_count": 8,
+     "library:duoforge_batch_env_episode": 8,
+     "library:duoforge_batch_expand": 144,
+     "library:duoforge_batch_expand_digest": 144,
+     "library:duoforge_batch_from_view": 64,
+     "library:duoforge_batch_observe_ext": 48,
+     "library:duoforge_batch_play_random": 64,
+     "library:duoforge_batch_public": 48,
+     "library:duoforge_batch_public_causes": 48,
+     "library:duoforge_batch_query": 80,
+     "library:duoforge_batch_query_encoded": 112,
+     "library:duoforge_batch_query_factored": 80,
+     "library:duoforge_batch_reset": 8,
+     "library:duoforge_batch_reset_setups": 8320,
+     "library:duoforge_batch_reset_terminal": 48,
+     "library:duoforge_batch_seeds": 16,
+     "library:duoforge_batch_step": 80,
+     "library:duoforge_batch_step_factored": 112,
+     "library:duoforge_batch_step_indices": 112,
+     "library:duoforge_batch_step_query": 192,
+     "library:duoforge_battle_candidates": 144,
+     "library:duoforge_battle_check": 8,
+     "library:duoforge_battle_clone": 32,
+     "library:duoforge_battle_copy": 32,
+     "library:duoforge_battle_create": 8,
+     "library:duoforge_battle_create.part.0": 1168,
+     "library:duoforge_battle_create_decoded": 8,
+     "library:duoforge_battle_create_decoded.part.0": 1408,
+     "library:duoforge_battle_decode": 48,
+     "library:duoforge_battle_decode.part.0": 1408,
+     "library:duoforge_battle_destroy": 8,
+     "library:duoforge_battle_digest": 32,
+     "library:duoforge_battle_digest.part.0": 1440,
+     "library:duoforge_battle_encode": 64,
+     "library:duoforge_battle_encoded_size": 32,
+     "library:duoforge_battle_equal": 48,
+     "library:duoforge_battle_equal.part.0": 2800,
+     "library:duoforge_battle_factored": 48,
+     "library:duoforge_battle_factored.part.0": 1312,
+     "library:duoforge_battle_from_view": 8,
+     "library:duoforge_battle_from_view.part.0": 4656,
+     "library:duoforge_battle_hypothesis": 8,
+     "library:duoforge_battle_hypothesis.part.0": 1888,
+     "library:duoforge_battle_observe": 48,
+     "library:duoforge_battle_observe.part.0": 944,
+     "library:duoforge_battle_observe_ext": 400,
+     "library:duoforge_battle_public": 8,
+     "library:duoforge_battle_public.part.0": 1472,
+     "library:duoforge_battle_public_causes": 64,
+     "library:duoforge_battle_request": 96,
+     "library:duoforge_battle_reseed": 32,
+     "library:duoforge_battle_result": 32,
+     "library:duoforge_battle_step": 32,
+     "library:duoforge_battle_step_events": 32,
+     "library:duoforge_battle_tiebreak": 8,
+     "library:duoforge_battle_tiebreak.part.0": 448,
+     "library:duoforge_context_active_per_side": 16,
+     "library:duoforge_context_create": 192,
+     "library:duoforge_context_destroy": 8,
+     "library:duoforge_context_fingerprint": 8,
+     "library:duoforge_data_ability_static": 80,
+     "library:duoforge_data_count": 80,
+     "library:duoforge_data_find": 96,
+     "library:duoforge_data_forme_info": 208,
+     "library:duoforge_data_forme_moves": 176,
+     "library:duoforge_data_forme_static": 144,
+     "library:duoforge_data_item_static": 80,
+     "library:duoforge_data_mega_at": 144,
+     "library:duoforge_data_mega_count": 128,
+     "library:duoforge_data_member_setup_valid": 176,
+     "library:duoforge_data_move_static": 96,
+     "library:duoforge_data_name": 96,
+     "library:duoforge_data_nature_static": 96,
+     "library:duoforge_data_request_target_class": 112,
+     "library:duoforge_data_supported": 96,
+     "library:duoforge_data_type_effect": 96,
+     "library:duoforge_encode": 480,
+     "library:duoforge_encoder_size": 8,
+     "library:duoforge_eval_workspace_create": 96,
+     "library:duoforge_eval_workspace_destroy": 64,
+     "library:duoforge_evaluator_destroy": 32,
+     "library:duoforge_evaluator_load": 8,
+     "library:duoforge_hp_display": 16,
+     "library:duoforge_move_result": 96,
+     "library:duoforge_observation_causes": 16,
+     "library:duoforge_public_queue_mask": 8,
+     "library:duoforge_public_queue_mask.part.0": 3520,
+     "library:duoforge_public_record_check": 8,
+     "library:duoforge_public_record_check.part.0": 3232,
+     "library:duoforge_reference_setup": 8,
+     "library:duoforge_reference_setup.part.0": 1104,
+     "library:duoforge_search_seeds": 8,
+     "library:duoforge_status_name": 8,
+     "library:duoforge_version_string": 8,
+     "library:mr_effect_value.isra": 56,
+     "library:neutral": 272,
+     "library:queue_canonical": 80
+    },
+    "text": {
+     "bench": 402801,
+     "library": 483914
+    }
+   },
+   "noipo": {
+    "frames": {
+     "bench:dfb_batch_native": 1360,
+     "bench:dfb_cpu_ns": 48,
+     "bench:dfb_episode_native": 160,
+     "bench:dfb_episode_pass": 2496,
+     "bench:dfb_rep_disturbed": 8,
+     "bench:dfb_rep_disturbed_workers": 8,
+     "bench:dfb_replay": 208,
+     "bench:dfb_request": 144,
+     "bench:dfb_request_pass": 864,
+     "bench:dfb_snapshot": 176,
+     "bench:dfb_snapshot_pass": 96,
+     "bench:dfb_step_core": 144,
+     "bench:dfb_tally_add": 8,
+     "bench:dfb_tally_choice": 9136,
+     "bench:dfb_tally_reset": 8,
+     "bench:dfb_tapes_destroy": 32,
+     "bench:dfb_tapes_record": 2432,
+     "bench:dfb_wall_ns": 48,
+     "bench:json_string": 32,
+     "bench:main": 2160,
+     "bench:usage": 16,
+     "bench:write_result.constprop": 912,
+     "bench:write_tally": 176,
+     "library:append": 288,
+     "library:append.constprop": 272,
+     "library:dense_core": 160,
+     "library:df_check_bytes_impl": 48,
+     "library:df_check_impl": 16,
+     "library:df_check_u64_impl": 32,
+     "library:df_conf_compare_events": 208,
+     "library:df_conf_compare_observation": 992,
+     "library:df_conf_compare_state": 336,
+     "library:df_conf_expected_status": 8,
+     "library:df_encode": 64,
+     "library:df_encode_n": 32,
+     "library:df_factored_choice": 64,
+     "library:df_factored_expand": 128,
+     "library:df_fail": 16,
+     "library:df_free": 8,
+     "library:df_heap_copy": 32,
+     "library:df_hex_to_bytes": 32,
+     "library:df_knowledge_refresh_active": 16,
+     "library:df_knowledge_see_hp": 8,
+     "library:df_make_battle": 32,
+     "library:df_make_context": 32,
+     "library:df_make_f1": 64,
+     "library:df_make_f10": 64,
+     "library:df_make_f11": 64,
+     "library:df_make_f12": 64,
+     "library:df_make_f13": 64,
+     "library:df_make_f2": 64,
+     "library:df_make_f3": 64,
+     "library:df_make_f4": 32,
+     "library:df_make_f5": 32,
+     "library:df_make_f6": 32,
+     "library:df_make_f8": 64,
+     "library:df_make_f9": 64,
+     "library:df_make_g1": 1120,
+     "library:df_make_g3": 1120,
+     "library:df_make_g7": 1120,
+     "library:df_put_team_c": 8,
+     "library:df_reference_digest_begin": 8,
+     "library:df_reference_digest_close": 32,
+     "library:df_reference_digest_end": 96,
+     "library:df_reference_digest_events": 80,
+     "library:df_reference_digest_open": 32,
+     "library:df_reference_digest_step": 48,
+     "library:df_reference_digest_tiebreak": 64,
+     "library:df_see_active": 16,
+     "library:df_setup_g1": 8,
+     "library:df_setup_g3": 8,
+     "library:df_setup_g7": 8,
+     "library:df_setup_teams": 16,
+     "library:df_test_begin": 8,
+     "library:df_test_end": 16,
+     "library:dfi_accuracy_check": 128,
+     "library:dfi_accuracy_targets": 256,
+     "library:dfi_add_hazard": 96,
+     "library:dfi_add_volatile": 128,
+     "library:dfi_after_faint": 64,
+     "library:dfi_alloc_zeroed": 8,
+     "library:dfi_allocate": 8,
+     "library:dfi_ally_swap_wish_blocked": 8,
+     "library:dfi_announce_faints": 144,
+     "library:dfi_apply_team_selection": 1552,
+     "library:dfi_attract_source_flat": 8,
+     "library:dfi_attract_update": 144,
+     "library:dfi_base_damage": 8,
+     "library:dfi_batch_context": 8,
+     "library:dfi_batch_each": 80,
+     "library:dfi_batch_leaves": 48,
+     "library:dfi_batch_make.constprop": 1120,
+     "library:dfi_batch_query_player": 112,
+     "library:dfi_batch_reset_with": 1168,
+     "library:dfi_battle_build": 2560,
+     "library:dfi_battle_create_ungated": 1168,
+     "library:dfi_battle_step_events_tape": 48,
+     "library:dfi_battle_step_observed": 12000,
+     "library:dfi_battle_step_tape": 48,
+     "library:dfi_battle_tiebreak_report": 32,
+     "library:dfi_battle_tiebreak_report.part.0": 688,
+     "library:dfi_before_move": 368,
+     "library:dfi_binding_is_current": 32,
+     "library:dfi_boost.isra": 464,
+     "library:dfi_bounce": 304,
+     "library:dfi_can_switch": 8,
+     "library:dfi_chain_modify": 8,
+     "library:dfi_champions_pp_max": 8,
+     "library:dfi_champions_stat": 8,
+     "library:dfi_check_member": 96,
+     "library:dfi_check_tail": 560,
+     "library:dfi_choice_bundle.part.0": 8,
+     "library:dfi_choice_lock_ends": 8,
+     "library:dfi_choice_slice": 160,
+     "library:dfi_clear_terrain": 176,
+     "library:dfi_closure_battle_supported": 64,
+     "library:dfi_closure_canonical_bytes": 24,
+     "library:dfi_closure_member_derive": 48,
+     "library:dfi_closure_member_forme_stats": 48,
+     "library:dfi_closure_member_init": 80,
+     "library:dfi_closure_member_mega_evolve": 112,
+     "library:dfi_closure_member_ranges": 64,
+     "library:dfi_closure_member_setup_valid": 56,
+     "library:dfi_closure_member_valid": 112,
+     "library:dfi_closure_setup_supported": 64,
+     "library:dfi_closure_side_clauses_hold": 8,
+     "library:dfi_context_active": 16,
+     "library:dfi_context_canonical_bytes": 8,
+     "library:dfi_context_fingerprint_matches": 8,
+     "library:dfi_context_has_pool_tail": 8,
+     "library:dfi_context_is_closure": 8,
+     "library:dfi_context_is_pool": 8,
+     "library:dfi_context_pick_count": 16,
+     "library:dfi_context_singles": 8,
+     "library:dfi_crit_damage": 8,
+     "library:dfi_current_binding": 32,
+     "library:dfi_cursed_body": 48,
+     "library:dfi_cute_charm.isra": 160,
+     "library:dfi_data_forme_info": 224,
+     "library:dfi_data_mega_at": 96,
+     "library:dfi_data_mega_count": 48,
+     "library:dfi_data_supported": 8,
+     "library:dfi_deal": 224,
+     "library:dfi_decode_state": 1616,
+     "library:dfi_disable_start": 112,
+     "library:dfi_double_shock_try": 80,
+     "library:dfi_drag_at_hit": 32,
+     "library:dfi_drag_blocked": 96,
+     "library:dfi_draw": 64,
+     "library:dfi_draw_chance": 64,
+     "library:dfi_draws_from_rng": 8,
+     "library:dfi_each_order.constprop": 128,
+     "library:dfi_each_slice": 48,
+     "library:dfi_emergency_exit": 96,
+     "library:dfi_emit": 32,
+     "library:dfi_emit_hp": 16,
+     "library:dfi_encode_clear": 8,
+     "library:dfi_encode_env": 1760,
+     "library:dfi_encode_leaf": 5808,
+     "library:dfi_encode_unchecked": 48,
+     "library:dfi_encoder_check": 64,
+     "library:dfi_entry_ability": 208,
+     "library:dfi_enumerate_side.constprop": 640,
+     "library:dfi_ev": 80,
+     "library:dfi_ev.constprop": 80,
+     "library:dfi_eval_add": 8,
+     "library:dfi_eval_binary32": 8,
+     "library:dfi_eval_binary32_id": 8,
+     "library:dfi_eval_concat": 80,
+     "library:dfi_eval_dense": 48,
+     "library:dfi_eval_dense32": 48,
+     "library:dfi_eval_dense_i32": 160,
+     "library:dfi_eval_dot_bound": 8,
+     "library:dfi_eval_dot_bound32": 8,
+     "library:dfi_eval_embedding": 48,
+     "library:dfi_eval_error": 48,
+     "library:dfi_eval_gather": 16,
+     "library:dfi_eval_graph_bind": 160,
+     "library:dfi_eval_graph_row": 656,
+     "library:dfi_eval_graph_scratch": 176,
+     "library:dfi_eval_input_columns": 8,
+     "library:dfi_eval_input_schema": 96,
+     "library:dfi_eval_layernorm32": 256,
+     "library:dfi_eval_layernorm_moments": 144,
+     "library:dfi_eval_load": 8,
+     "library:dfi_eval_load_descriptor": 8,
+     "library:dfi_eval_magnitude": 8,
+     "library:dfi_eval_model_release": 32,
+     "library:dfi_eval_mul": 8,
+     "library:dfi_eval_pool": 96,
+     "library:dfi_eval_prepare_inputs": 192,
+     "library:dfi_eval_requant": 8,
+     "library:dfi_eval_requant16": 8,
+     "library:dfi_eval_requant32": 8,
+     "library:dfi_eval_residual16": 48,
+     "library:dfi_eval_residual32": 48,
+     "library:dfi_eval_round_div": 8,
+     "library:dfi_eval_shape_lookup": 8,
+     "library:dfi_eval_sqrt128": 8,
+     "library:dfi_eval_sqrt128.part.0": 32,
+     "library:dfi_eval_tiles": 496,
+     "library:dfi_eval_workspace_acquire": 32,
+     "library:dfi_eval_workspace_create": 96,
+     "library:dfi_eval_workspace_destroy": 64,
+     "library:dfi_eval_workspace_release": 32,
+     "library:dfi_event_make": 48,
+     "library:dfi_event_project": 32,
+     "library:dfi_event_set_hp": 8,
+     "library:dfi_event_switch": 80,
+     "library:dfi_events_fit": 8,
+     "library:dfi_events_fold_knowledge": 320,
+     "library:dfi_events_push": 8,
+     "library:dfi_events_write.part.0": 48,
+     "library:dfi_expand": 512,
+     "library:dfi_expand_leaf": 224,
+     "library:dfi_expand_observed": 2416,
+     "library:dfi_expand_report.part.0": 64,
+     "library:dfi_ext_canonical_bytes": 32,
+     "library:dfi_ext_canonical_bytes_of": 152,
+     "library:dfi_ext_canonical_bytes_of.part.0": 152,
+     "library:dfi_ext_slice": 64,
+     "library:dfi_factored_bundle": 8,
+     "library:dfi_fail_line": 96,
+     "library:dfi_fail_still": 96,
+     "library:dfi_fails_skillswap": 8,
+     "library:dfi_field_start_turns": 8,
+     "library:dfi_final_damage": 8,
+     "library:dfi_flame_body.isra": 64,
+     "library:dfi_flower_veil_block": 96,
+     "library:dfi_flower_veil_holder": 64,
+     "library:dfi_forme_ability_legal": 8,
+     "library:dfi_forme_move_legal": 8,
+     "library:dfi_forme_setup_legal": 8,
+     "library:dfi_forme_stone": 8,
+     "library:dfi_free": 8,
+     "library:dfi_from_view_env": 48,
+     "library:dfi_gender_legal": 8,
+     "library:dfi_get_damage": 416,
+     "library:dfi_gooey.isra": 144,
+     "library:dfi_grounded_test": 48,
+     "library:dfi_has_entry": 8,
+     "library:dfi_heal": 160,
+     "library:dfi_herb_due": 8,
+     "library:dfi_herb_event": 160,
+     "library:dfi_herb_holder": 8,
+     "library:dfi_herbs_matter": 48,
+     "library:dfi_hospitality": 128,
+     "library:dfi_hp_display": 8,
+     "library:dfi_hp_display_valid": 8,
+     "library:dfi_illusion_disguise_up": 8,
+     "library:dfi_illusion_lead_disguise": 8,
+     "library:dfi_illusion_shown_occupant": 32,
+     "library:dfi_immune": 96,
+     "library:dfi_invariant_name": 8,
+     "library:dfi_invulnerable_to.isra": 64,
+     "library:dfi_item_start_shown": 96,
+     "library:dfi_key_of": 96,
+     "library:dfi_kind_full_roster": 8,
+     "library:dfi_kind_limits_of": 8,
+     "library:dfi_kind_singles": 8,
+     "library:dfi_last_move": 8,
+     "library:dfi_leaf_guard_sun": 24,
+     "library:dfi_leaves_slice": 48,
+     "library:dfi_lum_berry": 32,
+     "library:dfi_lum_cure": 144,
+     "library:dfi_manifest_ability": 8,
+     "library:dfi_manifest_item": 8,
+     "library:dfi_manifest_mega": 8,
+     "library:dfi_manifest_mega_of": 16,
+     "library:dfi_manifest_move": 8,
+     "library:dfi_mega_of": 8,
+     "library:dfi_member_accepted": 80,
+     "library:dfi_member_valid": 8,
+     "library:dfi_mod_fraction": 8,
+     "library:dfi_modify": 8,
+     "library:dfi_move_of": 8,
+     "library:dfi_move_priority": 48,
+     "library:dfi_move_targets": 80,
+     "library:dfi_move_type_now": 32,
+     "library:dfi_move_weather": 16,
+     "library:dfi_no_target_or_try.isra": 112,
+     "library:dfi_observation_capture": 64,
+     "library:dfi_observation_digest_init": 48,
+     "library:dfi_observation_error.part.0": 48,
+     "library:dfi_observation_finish": 1728,
+     "library:dfi_observation_finish_view": 1120,
+     "library:dfi_observation_fold": 144,
+     "library:dfi_observation_line_encode": 176,
+     "library:dfi_observation_request_encode": 1200,
+     "library:dfi_pair_allowed": 8,
+     "library:dfi_pcg32_accept": 8,
+     "library:dfi_pcg32_output": 8,
+     "library:dfi_pcg32_seed_raw": 48,
+     "library:dfi_pcg32_step": 8,
+     "library:dfi_pcg32_threshold": 8,
+     "library:dfi_piercing_drill_passes": 8,
+     "library:dfi_pivot_of_flag": 8,
+     "library:dfi_pivot_of_move": 8,
+     "library:dfi_place": 80,
+     "library:dfi_play_episode": 928,
+     "library:dfi_play_slice": 160,
+     "library:dfi_poison_point.isra": 64,
+     "library:dfi_poison_touch.isra": 64,
+     "library:dfi_pool_canonical_bytes": 48,
+     "library:dfi_pool_canonical_bytes_of": 80,
+     "library:dfi_pool_create": 64,
+     "library:dfi_pool_destroy": 48,
+     "library:dfi_pool_destroy.part.0": 48,
+     "library:dfi_pool_put_move": 8,
+     "library:dfi_pool_run": 64,
+     "library:dfi_pool_workers": 8,
+     "library:dfi_position_flat": 8,
+     "library:dfi_position_valid": 8,
+     "library:dfi_process_faints": 160,
+     "library:dfi_protect_targets": 256,
+     "library:dfi_public_causes_env": 8,
+     "library:dfi_public_env": 8,
+     "library:dfi_put_team": 8,
+     "library:dfi_query_env": 160,
+     "library:dfi_query_slice": 48,
+     "library:dfi_random_foe": 64,
+     "library:dfi_randomize": 8,
+     "library:dfi_read": 4672,
+     "library:dfi_read.constprop": 4656,
+     "library:dfi_release": 8,
+     "library:dfi_reprompt_side": 1408,
+     "library:dfi_res_gate.constprop": 8,
+     "library:dfi_reset_setups_slice": 48,
+     "library:dfi_reset_slice": 48,
+     "library:dfi_residual_events_run.constprop": 11088,
+     "library:dfi_residual_sort": 608,
+     "library:dfi_resist_berry_hit": 144,
+     "library:dfi_resolve_target": 48,
+     "library:dfi_rng_bounded_u32": 144,
+     "library:dfi_rng_is_valid": 8,
+     "library:dfi_rng_next_u32": 32,
+     "library:dfi_rng_seed": 48,
+     "library:dfi_run_curse": 224,
+     "library:dfi_run_entries": 368,
+     "library:dfi_run_follow_me": 112,
+     "library:dfi_run_heal_fraction": 208,
+     "library:dfi_run_move_body.constprop": 736,
+     "library:dfi_run_protect": 160,
+     "library:dfi_semi_invulnerable.isra": 8,
+     "library:dfi_set_held": 8,
+     "library:dfi_sf_strips": 8,
+     "library:dfi_sha256": 160,
+     "library:dfi_sha256_block": 368,
+     "library:dfi_sha256_final": 288,
+     "library:dfi_sha256_init": 8,
+     "library:dfi_sha256_update": 80,
+     "library:dfi_side_lists.constprop": 208,
+     "library:dfi_side_occupied_mask": 8,
+     "library:dfi_skill_swap_decision": 64,
+     "library:dfi_skill_swap_start": 32,
+     "library:dfi_slot_clear": 8,
+     "library:dfi_slot_volatile_is_clear": 8,
+     "library:dfi_sort_front": 320,
+     "library:dfi_speed_key": 112,
+     "library:dfi_spicy_spray": 32,
+     "library:dfi_stage_accuracy": 8,
+     "library:dfi_stage_stat": 8,
+     "library:dfi_stat_points_valid": 8,
+     "library:dfi_state_check": 8,
+     "library:dfi_state_check_mode": 368,
+     "library:dfi_state_check_query": 8,
+     "library:dfi_state_check_since": 8,
+     "library:dfi_state_encoded_size_of": 16,
+     "library:dfi_state_schema_of": 16,
+     "library:dfi_static.isra": 64,
+     "library:dfi_status_effects": 448,
+     "library:dfi_status_hit_end": 16,
+     "library:dfi_step_query_slice": 208,
+     "library:dfi_step_slice": 64,
+     "library:dfi_sturdy_saves.isra": 128,
+     "library:dfi_substitute_takes": 224,
+     "library:dfi_swap": 16,
+     "library:dfi_swap_position_state": 80,
+     "library:dfi_switch_in.constprop": 528,
+     "library:dfi_switch_trapped": 80,
+     "library:dfi_symbiosis": 176,
+     "library:dfi_tail_clear_occupant": 144,
+     "library:dfi_tail_clear_occupant.part.0": 144,
+     "library:dfi_target_candidates": 8,
+     "library:dfi_target_class_for_types": 8,
+     "library:dfi_terminal": 96,
+     "library:dfi_terrain_change": 144,
+     "library:dfi_thief": 192,
+     "library:dfi_thread_main": 96,
+     "library:dfi_toxic_debris.isra": 112,
+     "library:dfi_try_hit_abilities": 272,
+     "library:dfi_try_status": 256,
+     "library:dfi_turn_run": 592,
+     "library:dfi_turn_start": 240,
+     "library:dfi_type_booster_base_power": 8,
+     "library:dfi_type_damage": 8,
+     "library:dfi_types_of": 48,
+     "library:dfi_u64": 8,
+     "library:dfi_unburden_on_take": 8,
+     "library:dfi_unnerved": 8,
+     "library:dfi_update": 224,
+     "library:dfi_use_item": 32,
+     "library:dfi_use_item_core": 144,
+     "library:dfi_user_target_class": 48,
+     "library:dfi_vacate": 48,
+     "library:dfi_validate.constprop": 256,
+     "library:dfi_version_features.part.0": 72,
+     "library:dfi_view_counter_support": 816,
+     "library:dfi_view_encode.part.0": 528,
+     "library:dfi_view_observation_causes": 80,
+     "library:dfi_view_visible_causes.constprop": 816,
+     "library:dfi_weather_heal": 96,
+     "library:dfi_weather_suppression_scan": 16,
+     "library:dfi_white_herb": 32,
+     "library:dfi_will_move": 8,
+     "library:dfi_win_result": 8,
+     "library:duoforge_batch_create": 80,
+     "library:duoforge_batch_destroy": 32,
+     "library:duoforge_batch_env": 8,
+     "library:duoforge_batch_env_count": 8,
+     "library:duoforge_batch_env_episode": 8,
+     "library:duoforge_batch_expand": 144,
+     "library:duoforge_batch_expand_digest": 144,
+     "library:duoforge_batch_from_view": 96,
+     "library:duoforge_batch_observe_ext": 48,
+     "library:duoforge_batch_play_random": 64,
+     "library:duoforge_batch_public": 96,
+     "library:duoforge_batch_public_causes": 96,
+     "library:duoforge_batch_query": 80,
+     "library:duoforge_batch_query_encoded": 128,
+     "library:duoforge_batch_query_factored": 80,
+     "library:duoforge_batch_reset": 8,
+     "library:duoforge_batch_reset_setups": 8320,
+     "library:duoforge_batch_reset_terminal": 48,
+     "library:duoforge_batch_seeds": 16,
+     "library:duoforge_batch_step": 80,
+     "library:duoforge_batch_step_factored": 112,
+     "library:duoforge_batch_step_indices": 112,
+     "library:duoforge_batch_step_query": 192,
+     "library:duoforge_battle_candidates": 144,
+     "library:duoforge_battle_check": 8,
+     "library:duoforge_battle_clone": 32,
+     "library:duoforge_battle_copy": 32,
+     "library:duoforge_battle_create": 1168,
+     "library:duoforge_battle_create_decoded": 1408,
+     "library:duoforge_battle_decode": 1424,
+     "library:duoforge_battle_destroy": 8,
+     "library:duoforge_battle_digest": 1456,
+     "library:duoforge_battle_encode": 64,
+     "library:duoforge_battle_encoded_size": 32,
+     "library:duoforge_battle_equal": 2816,
+     "library:duoforge_battle_factored": 1312,
+     "library:duoforge_battle_from_view": 8,
+     "library:duoforge_battle_from_view.part.0": 4672,
+     "library:duoforge_battle_hypothesis": 1888,
+     "library:duoforge_battle_observe": 944,
+     "library:duoforge_battle_observe_ext": 400,
+     "library:duoforge_battle_public": 8,
+     "library:duoforge_battle_public.part.0": 1472,
+     "library:duoforge_battle_public_causes": 64,
+     "library:duoforge_battle_request": 96,
+     "library:duoforge_battle_reseed": 32,
+     "library:duoforge_battle_result": 32,
+     "library:duoforge_battle_step": 48,
+     "library:duoforge_battle_step_events": 48,
+     "library:duoforge_battle_tiebreak": 464,
+     "library:duoforge_context_active_per_side": 16,
+     "library:duoforge_context_create": 192,
+     "library:duoforge_context_destroy": 8,
+     "library:duoforge_context_fingerprint": 8,
+     "library:duoforge_data_ability_static": 80,
+     "library:duoforge_data_count": 80,
+     "library:duoforge_data_find": 96,
+     "library:duoforge_data_forme_info": 208,
+     "library:duoforge_data_forme_moves": 176,
+     "library:duoforge_data_forme_static": 144,
+     "library:duoforge_data_item_static": 80,
+     "library:duoforge_data_mega_at": 144,
+     "library:duoforge_data_mega_count": 128,
+     "library:duoforge_data_member_setup_valid": 176,
+     "library:duoforge_data_move_static": 96,
+     "library:duoforge_data_name": 96,
+     "library:duoforge_data_nature_static": 96,
+     "library:duoforge_data_request_target_class": 112,
+     "library:duoforge_data_supported": 96,
+     "library:duoforge_data_type_effect": 96,
+     "library:duoforge_encode": 448,
+     "library:duoforge_encoder_size": 8,
+     "library:duoforge_eval_workspace_create": 8,
+     "library:duoforge_eval_workspace_destroy": 8,
+     "library:duoforge_evaluator_destroy": 8,
+     "library:duoforge_evaluator_load": 8,
+     "library:duoforge_hp_display": 16,
+     "library:duoforge_move_result": 96,
+     "library:duoforge_observation_causes": 16,
+     "library:duoforge_public_queue_mask": 3536,
+     "library:duoforge_public_record_check": 3232,
+     "library:duoforge_reference_setup": 1104,
+     "library:duoforge_search_seeds": 8,
+     "library:duoforge_status_name": 8,
+     "library:duoforge_version_string": 8,
+     "library:layout.constprop": 48,
+     "library:mr_effect_value.isra": 56,
+     "library:neutral": 272,
+     "library:queue_canonical": 80,
+     "library:residual": 160,
+     "library:rounded_divide": 32,
+     "library:scaled_product": 80,
+     "library:state": 144,
+     "library:tile_slice": 496,
+     "library:trace_row": 32
+    },
+    "text": {
+     "bench": 462508,
+     "library": 497964
+    }
+   }
+  },
+  "before": {
+   "commit": "907458c430e568c8707bdf1b9fd89e9ef2a83b79",
+   "ipo": {
+    "frames": {
+     "bench:dfb_episode_pass.constprop": 2528,
+     "bench:dfb_replay.constprop": 176,
+     "bench:dfb_request_pass": 912,
+     "bench:dfb_snapshot.constprop": 160,
+     "bench:dfb_snapshot_pass": 112,
+     "bench:dfb_step_core.constprop": 240,
+     "bench:dfb_tally_reset": 8,
+     "bench:dfb_tapes_destroy.part.0": 32,
+     "bench:dfi_ability": 8,
+     "bench:dfi_accuracy_check": 112,
+     "bench:dfi_accuracy_targets": 240,
+     "bench:dfi_add_hazard": 96,
+     "bench:dfi_add_heal_block": 80,
+     "bench:dfi_add_lockout.isra": 8,
+     "bench:dfi_add_volatile": 80,
+     "bench:dfi_after_faint": 64,
+     "bench:dfi_alive": 8,
+     "bench:dfi_announce_faints": 144,
+     "bench:dfi_at": 8,
+     "bench:dfi_attract_update": 144,
+     "bench:dfi_battle_step_observed.constprop": 13408,
+     "bench:dfi_before_move": 352,
+     "bench:dfi_boost.isra": 464,
+     "bench:dfi_bounce": 304,
+     "bench:dfi_bug_bite": 160,
+     "bench:dfi_can_switch": 8,
+     "bench:dfi_chain_modify": 8,
+     "bench:dfi_check_member": 144,
+     "bench:dfi_check_tail": 560,
+     "bench:dfi_choice_lock_ends": 8,
+     "bench:dfi_clear_terrain": 80,
+     "bench:dfi_closure_battle_supported.constprop": 40,
+     "bench:dfi_closure_member_derive": 8,
+     "bench:dfi_closure_member_forme_stats": 16,
+     "bench:dfi_closure_member_ranges": 24,
+     "bench:dfi_cursed_body": 48,
+     "bench:dfi_cute_charm.isra": 144,
+     "bench:dfi_deal": 208,
+     "bench:dfi_derive_stats": 16,
+     "bench:dfi_disable_start": 112,
+     "bench:dfi_double_shock_self": 160,
+     "bench:dfi_double_shock_try": 80,
+     "bench:dfi_drag_at_hit": 32,
+     "bench:dfi_drag_blocked": 80,
+     "bench:dfi_draw.part.0": 40,
+     "bench:dfi_draw_chance": 40,
+     "bench:dfi_each_order.constprop": 128,
+     "bench:dfi_emergency_exit": 96,
+     "bench:dfi_emit": 32,
+     "bench:dfi_emit_hp": 64,
+     "bench:dfi_emit_plain": 80,
+     "bench:dfi_encode_unchecked": 48,
+     "bench:dfi_encore_replace": 160,
+     "bench:dfi_entry_ability": 192,
+     "bench:dfi_enumerate_side.constprop": 672,
+     "bench:dfi_ev": 80,
+     "bench:dfi_ev.constprop": 80,
+     "bench:dfi_events_fit": 8,
+     "bench:dfi_events_fold_knowledge": 464,
+     "bench:dfi_events_write.part.0": 32,
+     "bench:dfi_fail_line": 80,
+     "bench:dfi_fail_still": 80,
+     "bench:dfi_fails_skillswap": 8,
+     "bench:dfi_field_start_turns": 8,
+     "bench:dfi_flame_body.isra": 64,
+     "bench:dfi_flower_veil_block": 80,
+     "bench:dfi_flower_veil_holder": 64,
+     "bench:dfi_get_damage": 368,
+     "bench:dfi_gooey.isra": 128,
+     "bench:dfi_grounded_test": 48,
+     "bench:dfi_has_entry": 8,
+     "bench:dfi_has_type": 32,
+     "bench:dfi_hazard_move.isra": 96,
+     "bench:dfi_heal": 144,
+     "bench:dfi_herb_due": 8,
+     "bench:dfi_herb_event": 144,
+     "bench:dfi_herbs_matter": 48,
+     "bench:dfi_holds": 8,
+     "bench:dfi_hospitality": 112,
+     "bench:dfi_immune": 80,
+     "bench:dfi_invulnerable_to.isra": 64,
+     "bench:dfi_item_code": 8,
+     "bench:dfi_item_code.part.0": 8,
+     "bench:dfi_item_start_shown": 80,
+     "bench:dfi_key_of": 96,
+     "bench:dfi_kind_limits_of": 8,
+     "bench:dfi_knock_off": 112,
+     "bench:dfi_last_move": 8,
+     "bench:dfi_leaf_guard_sun": 24,
+     "bench:dfi_lum_berry": 32,
+     "bench:dfi_lum_cure": 128,
+     "bench:dfi_mega_of": 8,
+     "bench:dfi_move_of": 8,
+     "bench:dfi_move_priority": 64,
+     "bench:dfi_move_targets": 48,
+     "bench:dfi_move_type_now": 32,
+     "bench:dfi_move_weather": 16,
+     "bench:dfi_no_target_or_try.isra": 112,
+     "bench:dfi_observation_capture": 16,
+     "bench:dfi_observation_error.part.0": 48,
+     "bench:dfi_pair_allowed": 8,
+     "bench:dfi_piercing_drill_passes": 8,
+     "bench:dfi_place.constprop": 64,
+     "bench:dfi_play_episode": 2704,
+     "bench:dfi_play_slice": 160,
+     "bench:dfi_poison_point.isra": 64,
+     "bench:dfi_poison_touch.isra": 64,
+     "bench:dfi_pool_destroy.part.0": 48,
+     "bench:dfi_process_faints": 144,
+     "bench:dfi_protect_targets": 256,
+     "bench:dfi_put_team": 8,
+     "bench:dfi_random_foe": 48,
+     "bench:dfi_red_card": 32,
+     "bench:dfi_residual_events_run.constprop": 3040,
+     "bench:dfi_residual_order_changes_outcome": 10544,
+     "bench:dfi_residual_sort": 608,
+     "bench:dfi_resolve_target": 48,
+     "bench:dfi_run_after_you.isra": 144,
+     "bench:dfi_run_ally_switch": 192,
+     "bench:dfi_run_curse": 224,
+     "bench:dfi_run_entries": 352,
+     "bench:dfi_run_follow_me": 80,
+     "bench:dfi_run_heal_fraction": 208,
+     "bench:dfi_run_heal_pulse": 64,
+     "bench:dfi_run_move_body": 720,
+     "bench:dfi_run_protect": 96,
+     "bench:dfi_run_quash.isra": 96,
+     "bench:dfi_run_strength_sap.isra": 80,
+     "bench:dfi_semi_invulnerable.isra": 8,
+     "bench:dfi_set_held": 8,
+     "bench:dfi_sf_strips": 8,
+     "bench:dfi_sha256": 400,
+     "bench:dfi_sha256_block": 368,
+     "bench:dfi_sha256_update": 80,
+     "bench:dfi_side_lists.constprop": 224,
+     "bench:dfi_skill_swap": 224,
+     "bench:dfi_skill_swap_start": 32,
+     "bench:dfi_sort_front": 320,
+     "bench:dfi_speed_key": 64,
+     "bench:dfi_spicy_spray": 32,
+     "bench:dfi_state_check_mode": 336,
+     "bench:dfi_static.isra": 64,
+     "bench:dfi_status_effects": 384,
+     "bench:dfi_status_hit_end": 16,
+     "bench:dfi_stone_refused_for": 8,
+     "bench:dfi_sturdy_saves.isra": 112,
+     "bench:dfi_substitute_takes": 208,
+     "bench:dfi_swap": 16,
+     "bench:dfi_switch_in.constprop": 560,
+     "bench:dfi_symbiosis": 160,
+     "bench:dfi_tail_clear_occupant.part.0": 152,
+     "bench:dfi_terminal": 96,
+     "bench:dfi_terrain_change": 144,
+     "bench:dfi_thief": 176,
+     "bench:dfi_thread_main": 96,
+     "bench:dfi_toxic_debris.isra": 112,
+     "bench:dfi_try_hit_abilities": 272,
+     "bench:dfi_try_status": 256,
+     "bench:dfi_turn_run.constprop": 592,
+     "bench:dfi_types_of": 32,
+     "bench:dfi_unburden_on_take": 8,
+     "bench:dfi_unnerved": 8,
+     "bench:dfi_update": 240,
+     "bench:dfi_use_item": 32,
+     "bench:dfi_use_item_core": 144,
+     "bench:dfi_volatile_end": 80,
+     "bench:dfi_weather_heal": 96,
+     "bench:dfi_weather_suppression_scan": 16,
+     "bench:dfi_will_move": 8,
+     "bench:dfi_win_result": 8,
+     "bench:dfi_write_envelope.constprop": 8,
+     "bench:duoforge_battle_candidates.part.0.constprop": 144,
+     "bench:duoforge_battle_create.part.0": 3760,
+     "bench:duoforge_battle_decode.part.0": 2992,
+     "bench:duoforge_battle_digest.part.0": 1440,
+     "bench:duoforge_battle_observe.part.0": 952,
+     "bench:duoforge_reference_setup.part.0.constprop": 1120,
+     "bench:json_string": 32,
+     "bench:main": 15008,
+     "bench:usage": 16,
+     "bench:write_result.constprop": 912,
+     "bench:write_tally": 176,
+     "library:dfi_ability": 8,
+     "library:dfi_accuracy_check": 128,
+     "library:dfi_accuracy_targets": 272,
+     "library:dfi_add_hazard": 96,
+     "library:dfi_add_volatile": 128,
+     "library:dfi_after_faint": 64,
+     "library:dfi_alive": 8,
+     "library:dfi_alloc_zeroed": 8,
+     "library:dfi_allocate": 8,
+     "library:dfi_ally_swap_wish_blocked": 8,
+     "library:dfi_announce_faints": 144,
+     "library:dfi_apply_team_selection": 1552,
+     "library:dfi_at": 8,
+     "library:dfi_attract_source_flat": 8,
+     "library:dfi_attract_update": 144,
+     "library:dfi_base_damage": 8,
+     "library:dfi_batch_context": 8,
+     "library:dfi_batch_each": 80,
+     "library:dfi_batch_leaves": 48,
+     "library:dfi_batch_make.constprop": 1120,
+     "library:dfi_batch_query_player": 112,
+     "library:dfi_batch_reset_with": 1168,
+     "library:dfi_battle_build": 2560,
+     "library:dfi_battle_create_ungated": 8,
+     "library:dfi_battle_create_ungated.part.0": 1168,
+     "library:dfi_battle_step_events_tape": 48,
+     "library:dfi_battle_step_observed": 12016,
+     "library:dfi_battle_step_tape": 32,
+     "library:dfi_battle_tiebreak_report": 32,
+     "library:dfi_battle_tiebreak_report.part.0": 688,
+     "library:dfi_before_move": 368,
+     "library:dfi_binding_is_current": 32,
+     "library:dfi_boost.isra": 464,
+     "library:dfi_bounce": 304,
+     "library:dfi_bug_bite": 176,
+     "library:dfi_can_switch": 8,
+     "library:dfi_chain_modify": 8,
+     "library:dfi_champions_pp_max": 8,
+     "library:dfi_champions_stat": 8,
+     "library:dfi_check_member": 96,
+     "library:dfi_check_tail": 560,
+     "library:dfi_choice_bundle.part.0": 8,
+     "library:dfi_choice_lock_ends": 8,
+     "library:dfi_choice_slice": 160,
+     "library:dfi_clear_terrain": 96,
+     "library:dfi_closure_battle_supported": 64,
+     "library:dfi_closure_canonical_bytes": 24,
+     "library:dfi_closure_member_derive": 48,
+     "library:dfi_closure_member_forme_stats": 48,
+     "library:dfi_closure_member_init": 80,
+     "library:dfi_closure_member_mega_evolve": 96,
+     "library:dfi_closure_member_ranges": 64,
+     "library:dfi_closure_member_setup_valid": 48,
+     "library:dfi_closure_member_valid": 112,
+     "library:dfi_closure_setup_supported": 64,
+     "library:dfi_closure_side_clauses_hold": 8,
+     "library:dfi_context_active": 16,
+     "library:dfi_context_canonical_bytes": 8,
+     "library:dfi_context_fingerprint_matches": 8,
+     "library:dfi_context_has_pool_tail": 8,
+     "library:dfi_context_is_closure": 8,
+     "library:dfi_context_is_pool": 8,
+     "library:dfi_context_pick_count": 16,
+     "library:dfi_context_singles": 8,
+     "library:dfi_crit_damage": 8,
+     "library:dfi_current_binding": 32,
+     "library:dfi_cursed_body": 48,
+     "library:dfi_cute_charm.isra": 160,
+     "library:dfi_data_forme_info": 224,
+     "library:dfi_data_mega_at": 96,
+     "library:dfi_data_mega_count": 48,
+     "library:dfi_data_supported": 8,
+     "library:dfi_deal": 224,
+     "library:dfi_decode_state": 1616,
+     "library:dfi_disable_start": 112,
+     "library:dfi_double_shock_try": 80,
+     "library:dfi_drag_at_hit": 32,
+     "library:dfi_drag_blocked": 96,
+     "library:dfi_draw": 64,
+     "library:dfi_draw_chance": 48,
+     "library:dfi_draws_from_rng": 8,
+     "library:dfi_each_order.constprop": 128,
+     "library:dfi_each_slice": 48,
+     "library:dfi_emergency_exit": 96,
+     "library:dfi_emit": 32,
+     "library:dfi_emit_hp": 16,
+     "library:dfi_encode_clear": 8,
+     "library:dfi_encode_env": 1760,
+     "library:dfi_encode_leaf": 5808,
+     "library:dfi_encode_unchecked": 48,
+     "library:dfi_encoder_check": 64,
+     "library:dfi_entry_ability": 224,
+     "library:dfi_enumerate_side.constprop": 672,
+     "library:dfi_ev": 80,
+     "library:dfi_ev.constprop": 80,
+     "library:dfi_eval_error": 48,
+     "library:dfi_event_make": 48,
+     "library:dfi_event_project": 32,
+     "library:dfi_event_set_hp": 8,
+     "library:dfi_event_switch": 80,
+     "library:dfi_events_fit": 8,
+     "library:dfi_events_fold_knowledge": 464,
+     "library:dfi_events_push": 8,
+     "library:dfi_events_write.part.0": 48,
+     "library:dfi_expand": 512,
+     "library:dfi_expand_leaf": 224,
+     "library:dfi_expand_observed": 2416,
+     "library:dfi_expand_report.part.0": 64,
+     "library:dfi_ext_canonical_bytes": 32,
+     "library:dfi_ext_canonical_bytes_of": 152,
+     "library:dfi_ext_slice": 64,
+     "library:dfi_factored_bundle": 8,
+     "library:dfi_fail_line": 96,
+     "library:dfi_fail_still": 96,
+     "library:dfi_fails_skillswap": 8,
+     "library:dfi_field_start_turns": 8,
+     "library:dfi_final_damage": 8,
+     "library:dfi_flame_body.isra": 64,
+     "library:dfi_flower_veil_block": 96,
+     "library:dfi_flower_veil_holder": 64,
+     "library:dfi_forme_ability_legal": 8,
+     "library:dfi_forme_move_legal": 8,
+     "library:dfi_forme_setup_legal": 8,
+     "library:dfi_forme_stone": 8,
+     "library:dfi_free": 8,
+     "library:dfi_from_view_env": 48,
+     "library:dfi_gender_legal": 8,
+     "library:dfi_get_damage": 432,
+     "library:dfi_gooey.isra": 144,
+     "library:dfi_grounded_test": 48,
+     "library:dfi_has_entry": 8,
+     "library:dfi_has_type": 48,
+     "library:dfi_heal": 160,
+     "library:dfi_herb_due": 8,
+     "library:dfi_herb_event": 160,
+     "library:dfi_herbs_matter": 48,
+     "library:dfi_holds": 8,
+     "library:dfi_hospitality": 128,
+     "library:dfi_hp_display": 8,
+     "library:dfi_hp_display_valid": 8,
+     "library:dfi_illusion_disguise_up": 8,
+     "library:dfi_illusion_lead_disguise": 8,
+     "library:dfi_illusion_shown_occupant": 32,
+     "library:dfi_immune": 96,
+     "library:dfi_invariant_name": 8,
+     "library:dfi_invulnerable_to.isra": 64,
+     "library:dfi_item_code": 8,
+     "library:dfi_item_code.part.0": 8,
+     "library:dfi_item_start_shown": 96,
+     "library:dfi_key_of": 96,
+     "library:dfi_kind_full_roster": 8,
+     "library:dfi_kind_limits_of": 8,
+     "library:dfi_kind_singles": 8,
+     "library:dfi_knock_off": 112,
+     "library:dfi_last_move": 8,
+     "library:dfi_leaf_guard_sun": 32,
+     "library:dfi_leaves_slice": 48,
+     "library:dfi_lum_berry": 32,
+     "library:dfi_lum_cure": 144,
+     "library:dfi_manifest_ability": 8,
+     "library:dfi_manifest_item": 8,
+     "library:dfi_manifest_mega": 8,
+     "library:dfi_manifest_mega_of": 16,
+     "library:dfi_manifest_move": 8,
+     "library:dfi_mega_of": 8,
+     "library:dfi_member_accepted": 80,
+     "library:dfi_member_valid": 8,
+     "library:dfi_mod_fraction": 8,
+     "library:dfi_modify": 8,
+     "library:dfi_move_of": 8,
+     "library:dfi_move_priority": 64,
+     "library:dfi_move_targets": 80,
+     "library:dfi_move_type_now": 32,
+     "library:dfi_move_weather": 16,
+     "library:dfi_no_target_or_try.isra": 112,
+     "library:dfi_observation_capture.part.0": 64,
+     "library:dfi_observation_error.part.0": 48,
+     "library:dfi_observation_finish": 3856,
+     "library:dfi_pair_allowed": 8,
+     "library:dfi_pcg32_accept": 8,
+     "library:dfi_pcg32_output": 8,
+     "library:dfi_pcg32_seed_raw": 48,
+     "library:dfi_pcg32_step": 8,
+     "library:dfi_pcg32_threshold": 8,
+     "library:dfi_piercing_drill_passes": 8,
+     "library:dfi_pivot_of_flag": 8,
+     "library:dfi_pivot_of_move": 8,
+     "library:dfi_place": 80,
+     "library:dfi_play_episode": 928,
+     "library:dfi_play_slice": 160,
+     "library:dfi_poison_point.isra": 64,
+     "library:dfi_poison_touch.isra": 64,
+     "library:dfi_pool_canonical_bytes": 48,
+     "library:dfi_pool_canonical_bytes_of": 80,
+     "library:dfi_pool_create": 64,
+     "library:dfi_pool_destroy": 48,
+     "library:dfi_pool_put_move": 8,
+     "library:dfi_pool_run": 64,
+     "library:dfi_pool_workers": 8,
+     "library:dfi_position_flat": 8,
+     "library:dfi_position_valid": 8,
+     "library:dfi_process_faints": 160,
+     "library:dfi_protect_targets": 256,
+     "library:dfi_public_causes_env": 8,
+     "library:dfi_public_env": 8,
+     "library:dfi_put_team": 8,
+     "library:dfi_query_env": 80,
+     "library:dfi_query_slice": 48,
+     "library:dfi_random_foe": 64,
+     "library:dfi_randomize": 8,
+     "library:dfi_read.constprop": 4720,
+     "library:dfi_release": 8,
+     "library:dfi_reprompt_side": 1408,
+     "library:dfi_res_gate.constprop": 8,
+     "library:dfi_reset_setups_slice": 48,
+     "library:dfi_reset_slice": 48,
+     "library:dfi_residual_events_run.constprop": 3056,
+     "library:dfi_residual_order_changes_outcome": 10544,
+     "library:dfi_residual_sort": 608,
+     "library:dfi_resolve_target": 48,
+     "library:dfi_rng_bounded_u32": 144,
+     "library:dfi_rng_is_valid": 8,
+     "library:dfi_rng_next_u32": 32,
+     "library:dfi_rng_seed": 48,
+     "library:dfi_run_ally_switch": 192,
+     "library:dfi_run_curse": 224,
+     "library:dfi_run_entries": 352,
+     "library:dfi_run_follow_me": 112,
+     "library:dfi_run_heal_fraction": 208,
+     "library:dfi_run_move_body": 720,
+     "library:dfi_run_protect": 160,
+     "library:dfi_semi_invulnerable.isra": 8,
+     "library:dfi_set_held": 8,
+     "library:dfi_sf_strips": 8,
+     "library:dfi_sha256": 144,
+     "library:dfi_sha256_block": 368,
+     "library:dfi_sha256_final": 288,
+     "library:dfi_sha256_update": 80,
+     "library:dfi_side_lists.constprop": 208,
+     "library:dfi_side_occupied_mask": 8,
+     "library:dfi_skill_swap_decision": 72,
+     "library:dfi_skill_swap_start": 32,
+     "library:dfi_slot_clear": 8,
+     "library:dfi_slot_volatile_is_clear": 8,
+     "library:dfi_sort_front": 320,
+     "library:dfi_speed_key": 96,
+     "library:dfi_spicy_spray": 32,
+     "library:dfi_stage_accuracy": 8,
+     "library:dfi_stage_stat": 8,
+     "library:dfi_stat_points_valid": 8,
+     "library:dfi_state_check": 8,
+     "library:dfi_state_check_mode": 368,
+     "library:dfi_state_check_query": 8,
+     "library:dfi_state_check_since": 8,
+     "library:dfi_state_encoded_size_of": 16,
+     "library:dfi_state_schema_of": 16,
+     "library:dfi_static.isra": 64,
+     "library:dfi_status_effects": 448,
+     "library:dfi_status_hit_end": 16,
+     "library:dfi_step_query_slice": 208,
+     "library:dfi_step_slice": 64,
+     "library:dfi_sturdy_saves.isra": 128,
+     "library:dfi_substitute_takes": 224,
+     "library:dfi_swap": 16,
+     "library:dfi_swap_position_state": 80,
+     "library:dfi_switch_in.constprop": 560,
+     "library:dfi_switch_trapped": 80,
+     "library:dfi_symbiosis": 176,
+     "library:dfi_tail_clear_occupant": 144,
+     "library:dfi_target_candidates": 8,
+     "library:dfi_target_class_for_types": 8,
+     "library:dfi_terminal": 96,
+     "library:dfi_terrain_change": 144,
+     "library:dfi_thief": 192,
+     "library:dfi_thread_main": 96,
+     "library:dfi_toxic_debris.isra": 112,
+     "library:dfi_try_hit_abilities": 272,
+     "library:dfi_try_status": 256,
+     "library:dfi_turn_run": 592,
+     "library:dfi_turn_start": 240,
+     "library:dfi_type_damage": 8,
+     "library:dfi_types_of": 48,
+     "library:dfi_u64": 8,
+     "library:dfi_unburden_on_take": 8,
+     "library:dfi_unnerved": 8,
+     "library:dfi_update": 224,
+     "library:dfi_use_item": 32,
+     "library:dfi_use_item_core": 144,
+     "library:dfi_user_target_class": 48,
+     "library:dfi_vacate": 32,
+     "library:dfi_validate.constprop": 256,
+     "library:dfi_version_features.part.0": 144,
+     "library:dfi_view_counter_support": 816,
+     "library:dfi_view_encode.part.0": 528,
+     "library:dfi_view_observation_causes": 96,
+     "library:dfi_view_visible_causes.constprop": 816,
+     "library:dfi_weather_heal": 96,
+     "library:dfi_weather_suppression_scan": 16,
+     "library:dfi_will_move": 8,
+     "library:dfi_win_result": 8,
+     "library:duoforge_batch_create": 80,
+     "library:duoforge_batch_destroy": 32,
+     "library:duoforge_batch_env": 8,
+     "library:duoforge_batch_env_count": 8,
+     "library:duoforge_batch_env_episode": 8,
+     "library:duoforge_batch_expand": 144,
+     "library:duoforge_batch_expand_digest": 144,
+     "library:duoforge_batch_from_view": 64,
+     "library:duoforge_batch_observe_ext": 48,
+     "library:duoforge_batch_play_random": 64,
+     "library:duoforge_batch_public": 48,
+     "library:duoforge_batch_public_causes": 48,
+     "library:duoforge_batch_query": 80,
+     "library:duoforge_batch_query_encoded": 112,
+     "library:duoforge_batch_query_factored": 80,
+     "library:duoforge_batch_reset": 8,
+     "library:duoforge_batch_reset_setups": 8320,
+     "library:duoforge_batch_reset_terminal": 48,
+     "library:duoforge_batch_seeds": 16,
+     "library:duoforge_batch_step": 80,
+     "library:duoforge_batch_step_factored": 112,
+     "library:duoforge_batch_step_indices": 112,
+     "library:duoforge_batch_step_query": 192,
+     "library:duoforge_battle_candidates": 144,
+     "library:duoforge_battle_check": 8,
+     "library:duoforge_battle_clone": 32,
+     "library:duoforge_battle_copy": 32,
+     "library:duoforge_battle_create": 8,
+     "library:duoforge_battle_create.part.0": 1168,
+     "library:duoforge_battle_create_decoded": 8,
+     "library:duoforge_battle_create_decoded.part.0": 1408,
+     "library:duoforge_battle_decode": 48,
+     "library:duoforge_battle_decode.part.0": 1408,
+     "library:duoforge_battle_destroy": 8,
+     "library:duoforge_battle_digest": 32,
+     "library:duoforge_battle_digest.part.0": 1440,
+     "library:duoforge_battle_encode": 64,
+     "library:duoforge_battle_encoded_size": 32,
+     "library:duoforge_battle_equal": 48,
+     "library:duoforge_battle_equal.part.0": 2800,
+     "library:duoforge_battle_factored": 48,
+     "library:duoforge_battle_factored.part.0": 1312,
+     "library:duoforge_battle_from_view": 8,
+     "library:duoforge_battle_from_view.part.0": 4656,
+     "library:duoforge_battle_hypothesis": 8,
+     "library:duoforge_battle_hypothesis.part.0": 1888,
+     "library:duoforge_battle_observe": 48,
+     "library:duoforge_battle_observe.part.0": 944,
+     "library:duoforge_battle_observe_ext": 400,
+     "library:duoforge_battle_public": 8,
+     "library:duoforge_battle_public.part.0": 1472,
+     "library:duoforge_battle_public_causes": 64,
+     "library:duoforge_battle_request": 96,
+     "library:duoforge_battle_reseed": 32,
+     "library:duoforge_battle_result": 32,
+     "library:duoforge_battle_step": 32,
+     "library:duoforge_battle_step_events": 32,
+     "library:duoforge_battle_tiebreak": 8,
+     "library:duoforge_battle_tiebreak.part.0": 448,
+     "library:duoforge_context_active_per_side": 16,
+     "library:duoforge_context_create": 192,
+     "library:duoforge_context_destroy": 8,
+     "library:duoforge_context_fingerprint": 8,
+     "library:duoforge_data_ability_static": 80,
+     "library:duoforge_data_count": 80,
+     "library:duoforge_data_find": 96,
+     "library:duoforge_data_forme_info": 208,
+     "library:duoforge_data_forme_moves": 176,
+     "library:duoforge_data_forme_static": 144,
+     "library:duoforge_data_item_static": 80,
+     "library:duoforge_data_mega_at": 144,
+     "library:duoforge_data_mega_count": 128,
+     "library:duoforge_data_member_setup_valid": 176,
+     "library:duoforge_data_move_static": 96,
+     "library:duoforge_data_name": 96,
+     "library:duoforge_data_nature_static": 96,
+     "library:duoforge_data_request_target_class": 112,
+     "library:duoforge_data_supported": 96,
+     "library:duoforge_data_type_effect": 96,
+     "library:duoforge_encode": 480,
+     "library:duoforge_encoder_size": 8,
+     "library:duoforge_eval_workspace_create": 96,
+     "library:duoforge_eval_workspace_destroy": 64,
+     "library:duoforge_evaluator_destroy": 32,
+     "library:duoforge_evaluator_load": 8,
+     "library:duoforge_hp_display": 16,
+     "library:duoforge_move_result": 96,
+     "library:duoforge_observation_causes": 16,
+     "library:duoforge_public_queue_mask": 8,
+     "library:duoforge_public_queue_mask.part.0": 3520,
+     "library:duoforge_public_record_check": 8,
+     "library:duoforge_public_record_check.part.0": 3232,
+     "library:duoforge_reference_setup": 8,
+     "library:duoforge_reference_setup.part.0": 1104,
+     "library:duoforge_search_seeds": 8,
+     "library:duoforge_status_name": 8,
+     "library:duoforge_version_string": 8,
+     "library:mr_effect_value.isra": 56,
+     "library:neutral": 272,
+     "library:queue_canonical": 80
+    },
+    "text": {
+     "bench": 396667,
+     "library": 476106
+    }
+   },
+   "noipo": {
+    "frames": {
+     "bench:dfb_batch_native": 1360,
+     "bench:dfb_cpu_ns": 48,
+     "bench:dfb_episode_native": 160,
+     "bench:dfb_episode_pass": 2496,
+     "bench:dfb_rep_disturbed": 8,
+     "bench:dfb_rep_disturbed_workers": 8,
+     "bench:dfb_replay": 208,
+     "bench:dfb_request": 144,
+     "bench:dfb_request_pass": 864,
+     "bench:dfb_snapshot": 176,
+     "bench:dfb_snapshot_pass": 96,
+     "bench:dfb_step_core": 144,
+     "bench:dfb_tally_add": 8,
+     "bench:dfb_tally_choice": 9136,
+     "bench:dfb_tally_reset": 8,
+     "bench:dfb_tapes_destroy": 32,
+     "bench:dfb_tapes_record": 2432,
+     "bench:dfb_wall_ns": 48,
+     "bench:json_string": 32,
+     "bench:main": 2160,
+     "bench:usage": 16,
+     "bench:write_result.constprop": 912,
+     "bench:write_tally": 176,
+     "library:append": 288,
+     "library:append.constprop": 272,
+     "library:dense_core": 160,
+     "library:df_check_bytes_impl": 48,
+     "library:df_check_impl": 16,
+     "library:df_check_u64_impl": 32,
+     "library:df_conf_compare_events": 208,
+     "library:df_conf_compare_observation": 992,
+     "library:df_conf_compare_state": 336,
+     "library:df_conf_expected_status": 8,
+     "library:df_encode": 64,
+     "library:df_encode_n": 32,
+     "library:df_factored_choice": 64,
+     "library:df_factored_expand": 128,
+     "library:df_fail": 16,
+     "library:df_free": 8,
+     "library:df_heap_copy": 32,
+     "library:df_hex_to_bytes": 32,
+     "library:df_knowledge_refresh_active": 16,
+     "library:df_knowledge_see_hp": 8,
+     "library:df_make_battle": 32,
+     "library:df_make_context": 32,
+     "library:df_make_f1": 64,
+     "library:df_make_f10": 64,
+     "library:df_make_f11": 64,
+     "library:df_make_f12": 64,
+     "library:df_make_f13": 64,
+     "library:df_make_f2": 64,
+     "library:df_make_f3": 64,
+     "library:df_make_f4": 32,
+     "library:df_make_f5": 32,
+     "library:df_make_f6": 32,
+     "library:df_make_f8": 64,
+     "library:df_make_f9": 64,
+     "library:df_make_g1": 1120,
+     "library:df_make_g3": 1120,
+     "library:df_make_g7": 1120,
+     "library:df_put_team_c": 8,
+     "library:df_reference_digest_begin": 8,
+     "library:df_reference_digest_close": 32,
+     "library:df_reference_digest_end": 96,
+     "library:df_reference_digest_events": 80,
+     "library:df_reference_digest_open": 32,
+     "library:df_reference_digest_step": 48,
+     "library:df_reference_digest_tiebreak": 64,
+     "library:df_see_active": 16,
+     "library:df_setup_g1": 8,
+     "library:df_setup_g3": 8,
+     "library:df_setup_g7": 8,
+     "library:df_setup_teams": 16,
+     "library:df_test_begin": 8,
+     "library:df_test_end": 16,
+     "library:dfi_ability": 8,
+     "library:dfi_accuracy_check": 128,
+     "library:dfi_accuracy_targets": 256,
+     "library:dfi_add_hazard": 96,
+     "library:dfi_add_volatile": 128,
+     "library:dfi_after_faint": 64,
+     "library:dfi_alive": 8,
+     "library:dfi_alloc_zeroed": 8,
+     "library:dfi_allocate": 8,
+     "library:dfi_ally_swap_wish_blocked": 8,
+     "library:dfi_announce_faints": 144,
+     "library:dfi_apply_team_selection": 1552,
+     "library:dfi_at": 8,
+     "library:dfi_attract_source_flat": 8,
+     "library:dfi_attract_update": 144,
+     "library:dfi_base_damage": 8,
+     "library:dfi_batch_context": 8,
+     "library:dfi_batch_each": 80,
+     "library:dfi_batch_leaves": 48,
+     "library:dfi_batch_make.constprop": 1120,
+     "library:dfi_batch_query_player": 112,
+     "library:dfi_batch_reset_with": 1168,
+     "library:dfi_battle_build": 2560,
+     "library:dfi_battle_create_ungated": 1168,
+     "library:dfi_battle_step_events_tape": 48,
+     "library:dfi_battle_step_observed": 12000,
+     "library:dfi_battle_step_tape": 48,
+     "library:dfi_battle_tiebreak_report": 32,
+     "library:dfi_battle_tiebreak_report.part.0": 688,
+     "library:dfi_before_move": 368,
+     "library:dfi_binding_is_current": 32,
+     "library:dfi_boost.isra": 464,
+     "library:dfi_bounce": 304,
+     "library:dfi_bug_bite": 176,
+     "library:dfi_can_switch": 8,
+     "library:dfi_chain_modify": 8,
+     "library:dfi_champions_pp_max": 8,
+     "library:dfi_champions_stat": 8,
+     "library:dfi_check_member": 96,
+     "library:dfi_check_tail": 560,
+     "library:dfi_choice_bundle.part.0": 8,
+     "library:dfi_choice_lock_ends": 8,
+     "library:dfi_choice_slice": 160,
+     "library:dfi_clear_terrain": 96,
+     "library:dfi_closure_battle_supported": 64,
+     "library:dfi_closure_canonical_bytes": 24,
+     "library:dfi_closure_member_derive": 48,
+     "library:dfi_closure_member_forme_stats": 48,
+     "library:dfi_closure_member_init": 80,
+     "library:dfi_closure_member_mega_evolve": 112,
+     "library:dfi_closure_member_ranges": 64,
+     "library:dfi_closure_member_setup_valid": 56,
+     "library:dfi_closure_member_valid": 112,
+     "library:dfi_closure_setup_supported": 64,
+     "library:dfi_closure_side_clauses_hold": 8,
+     "library:dfi_context_active": 16,
+     "library:dfi_context_canonical_bytes": 8,
+     "library:dfi_context_fingerprint_matches": 8,
+     "library:dfi_context_has_pool_tail": 8,
+     "library:dfi_context_is_closure": 8,
+     "library:dfi_context_is_pool": 8,
+     "library:dfi_context_pick_count": 16,
+     "library:dfi_context_singles": 8,
+     "library:dfi_crit_damage": 8,
+     "library:dfi_current_binding": 32,
+     "library:dfi_cursed_body": 48,
+     "library:dfi_cute_charm.isra": 160,
+     "library:dfi_data_forme_info": 224,
+     "library:dfi_data_mega_at": 96,
+     "library:dfi_data_mega_count": 48,
+     "library:dfi_data_supported": 8,
+     "library:dfi_deal": 224,
+     "library:dfi_decode_state": 1616,
+     "library:dfi_disable_start": 112,
+     "library:dfi_double_shock_try": 80,
+     "library:dfi_drag_at_hit": 32,
+     "library:dfi_drag_blocked": 96,
+     "library:dfi_draw": 64,
+     "library:dfi_draw_chance": 64,
+     "library:dfi_draws_from_rng": 8,
+     "library:dfi_each_order.constprop": 128,
+     "library:dfi_each_slice": 48,
+     "library:dfi_emergency_exit": 96,
+     "library:dfi_emit": 32,
+     "library:dfi_emit_hp": 16,
+     "library:dfi_encode_clear": 8,
+     "library:dfi_encode_env": 1760,
+     "library:dfi_encode_leaf": 5808,
+     "library:dfi_encode_unchecked": 48,
+     "library:dfi_encoder_check": 64,
+     "library:dfi_entry_ability": 208,
+     "library:dfi_enumerate_side.constprop": 640,
+     "library:dfi_ev": 80,
+     "library:dfi_ev.constprop": 80,
+     "library:dfi_eval_add": 8,
+     "library:dfi_eval_binary32": 8,
+     "library:dfi_eval_binary32_id": 8,
+     "library:dfi_eval_concat": 80,
+     "library:dfi_eval_dense": 48,
+     "library:dfi_eval_dense32": 48,
+     "library:dfi_eval_dense_i32": 160,
+     "library:dfi_eval_dot_bound": 8,
+     "library:dfi_eval_dot_bound32": 8,
+     "library:dfi_eval_embedding": 48,
+     "library:dfi_eval_error": 48,
+     "library:dfi_eval_gather": 16,
+     "library:dfi_eval_graph_bind": 160,
+     "library:dfi_eval_graph_row": 656,
+     "library:dfi_eval_graph_scratch": 176,
+     "library:dfi_eval_input_columns": 8,
+     "library:dfi_eval_input_schema": 96,
+     "library:dfi_eval_layernorm32": 256,
+     "library:dfi_eval_layernorm_moments": 144,
+     "library:dfi_eval_load": 8,
+     "library:dfi_eval_load_descriptor": 8,
+     "library:dfi_eval_magnitude": 8,
+     "library:dfi_eval_model_release": 32,
+     "library:dfi_eval_mul": 8,
+     "library:dfi_eval_pool": 96,
+     "library:dfi_eval_prepare_inputs": 192,
+     "library:dfi_eval_requant": 8,
+     "library:dfi_eval_requant16": 8,
+     "library:dfi_eval_requant32": 8,
+     "library:dfi_eval_residual16": 48,
+     "library:dfi_eval_residual32": 48,
+     "library:dfi_eval_round_div": 8,
+     "library:dfi_eval_shape_lookup": 8,
+     "library:dfi_eval_sqrt128": 8,
+     "library:dfi_eval_sqrt128.part.0": 32,
+     "library:dfi_eval_tiles": 496,
+     "library:dfi_eval_workspace_acquire": 32,
+     "library:dfi_eval_workspace_create": 96,
+     "library:dfi_eval_workspace_destroy": 64,
+     "library:dfi_eval_workspace_release": 32,
+     "library:dfi_event_make": 48,
+     "library:dfi_event_project": 32,
+     "library:dfi_event_set_hp": 8,
+     "library:dfi_event_switch": 80,
+     "library:dfi_events_fit": 8,
+     "library:dfi_events_fold_knowledge": 320,
+     "library:dfi_events_push": 8,
+     "library:dfi_events_write.part.0": 48,
+     "library:dfi_expand": 512,
+     "library:dfi_expand_leaf": 224,
+     "library:dfi_expand_observed": 2416,
+     "library:dfi_expand_report.part.0": 64,
+     "library:dfi_ext_canonical_bytes": 32,
+     "library:dfi_ext_canonical_bytes_of": 152,
+     "library:dfi_ext_canonical_bytes_of.part.0": 152,
+     "library:dfi_ext_slice": 64,
+     "library:dfi_factored_bundle": 8,
+     "library:dfi_fail_line": 96,
+     "library:dfi_fail_still": 96,
+     "library:dfi_fails_skillswap": 8,
+     "library:dfi_field_start_turns": 8,
+     "library:dfi_final_damage": 8,
+     "library:dfi_flame_body.isra": 64,
+     "library:dfi_flower_veil_block": 96,
+     "library:dfi_flower_veil_holder": 64,
+     "library:dfi_forme_ability_legal": 8,
+     "library:dfi_forme_move_legal": 8,
+     "library:dfi_forme_setup_legal": 8,
+     "library:dfi_forme_stone": 8,
+     "library:dfi_free": 8,
+     "library:dfi_from_view_env": 48,
+     "library:dfi_gender_legal": 8,
+     "library:dfi_get_damage": 432,
+     "library:dfi_gooey.isra": 144,
+     "library:dfi_grounded_test": 48,
+     "library:dfi_has_entry": 8,
+     "library:dfi_has_type": 48,
+     "library:dfi_heal": 160,
+     "library:dfi_herb_due": 8,
+     "library:dfi_herb_event": 160,
+     "library:dfi_herb_holder": 8,
+     "library:dfi_herbs_matter": 48,
+     "library:dfi_holds": 8,
+     "library:dfi_hospitality": 128,
+     "library:dfi_hp_display": 8,
+     "library:dfi_hp_display_valid": 8,
+     "library:dfi_illusion_disguise_up": 8,
+     "library:dfi_illusion_lead_disguise": 8,
+     "library:dfi_illusion_shown_occupant": 32,
+     "library:dfi_immune": 96,
+     "library:dfi_invariant_name": 8,
+     "library:dfi_invulnerable_to.isra": 64,
+     "library:dfi_item_code": 8,
+     "library:dfi_item_code.part.0": 8,
+     "library:dfi_item_start_shown": 96,
+     "library:dfi_key_of": 96,
+     "library:dfi_kind_full_roster": 8,
+     "library:dfi_kind_limits_of": 8,
+     "library:dfi_kind_singles": 8,
+     "library:dfi_last_move": 8,
+     "library:dfi_leaf_guard_sun": 24,
+     "library:dfi_leaves_slice": 48,
+     "library:dfi_lum_berry": 32,
+     "library:dfi_lum_cure": 144,
+     "library:dfi_manifest_ability": 8,
+     "library:dfi_manifest_item": 8,
+     "library:dfi_manifest_mega": 8,
+     "library:dfi_manifest_mega_of": 16,
+     "library:dfi_manifest_move": 8,
+     "library:dfi_mega_of": 8,
+     "library:dfi_member_accepted": 80,
+     "library:dfi_member_valid": 8,
+     "library:dfi_mod_fraction": 8,
+     "library:dfi_modify": 8,
+     "library:dfi_move_of": 8,
+     "library:dfi_move_priority": 48,
+     "library:dfi_move_targets": 80,
+     "library:dfi_move_type_now": 32,
+     "library:dfi_move_weather": 16,
+     "library:dfi_no_target_or_try.isra": 112,
+     "library:dfi_observation_capture": 64,
+     "library:dfi_observation_digest_init": 48,
+     "library:dfi_observation_error.part.0": 48,
+     "library:dfi_observation_finish": 1728,
+     "library:dfi_observation_finish_view": 1120,
+     "library:dfi_observation_fold": 144,
+     "library:dfi_observation_line_encode": 176,
+     "library:dfi_observation_request_encode": 1200,
+     "library:dfi_pair_allowed": 8,
+     "library:dfi_pcg32_accept": 8,
+     "library:dfi_pcg32_output": 8,
+     "library:dfi_pcg32_seed_raw": 48,
+     "library:dfi_pcg32_step": 8,
+     "library:dfi_pcg32_threshold": 8,
+     "library:dfi_piercing_drill_passes": 8,
+     "library:dfi_pivot_of_flag": 8,
+     "library:dfi_pivot_of_move": 8,
+     "library:dfi_place": 80,
+     "library:dfi_play_episode": 928,
+     "library:dfi_play_slice": 160,
+     "library:dfi_poison_point.isra": 64,
+     "library:dfi_poison_touch.isra": 64,
+     "library:dfi_pool_canonical_bytes": 48,
+     "library:dfi_pool_canonical_bytes_of": 80,
+     "library:dfi_pool_create": 64,
+     "library:dfi_pool_destroy": 48,
+     "library:dfi_pool_destroy.part.0": 48,
+     "library:dfi_pool_put_move": 8,
+     "library:dfi_pool_run": 64,
+     "library:dfi_pool_workers": 8,
+     "library:dfi_position_flat": 8,
+     "library:dfi_position_valid": 8,
+     "library:dfi_process_faints": 160,
+     "library:dfi_protect_targets": 256,
+     "library:dfi_public_causes_env": 8,
+     "library:dfi_public_env": 8,
+     "library:dfi_put_team": 8,
+     "library:dfi_query_env": 160,
+     "library:dfi_query_slice": 48,
+     "library:dfi_random_foe": 64,
+     "library:dfi_randomize": 8,
+     "library:dfi_read": 4672,
+     "library:dfi_read.constprop": 4656,
+     "library:dfi_release": 8,
+     "library:dfi_reprompt_side": 1408,
+     "library:dfi_res_gate.constprop": 8,
+     "library:dfi_reset_setups_slice": 48,
+     "library:dfi_reset_slice": 48,
+     "library:dfi_residual_events_run.constprop": 3056,
+     "library:dfi_residual_order_changes_outcome": 10544,
+     "library:dfi_residual_sort": 608,
+     "library:dfi_resist_berry_hit": 144,
+     "library:dfi_resolve_target": 48,
+     "library:dfi_rng_bounded_u32": 144,
+     "library:dfi_rng_is_valid": 8,
+     "library:dfi_rng_next_u32": 32,
+     "library:dfi_rng_seed": 48,
+     "library:dfi_run_curse": 224,
+     "library:dfi_run_entries": 368,
+     "library:dfi_run_follow_me": 112,
+     "library:dfi_run_heal_fraction": 208,
+     "library:dfi_run_move_body.constprop": 720,
+     "library:dfi_run_protect": 160,
+     "library:dfi_semi_invulnerable.isra": 8,
+     "library:dfi_set_held": 8,
+     "library:dfi_sf_strips": 8,
+     "library:dfi_sha256": 160,
+     "library:dfi_sha256_block": 368,
+     "library:dfi_sha256_final": 288,
+     "library:dfi_sha256_init": 8,
+     "library:dfi_sha256_update": 80,
+     "library:dfi_side_lists.constprop": 208,
+     "library:dfi_side_occupied_mask": 8,
+     "library:dfi_skill_swap_decision": 72,
+     "library:dfi_skill_swap_start": 32,
+     "library:dfi_slot_clear": 8,
+     "library:dfi_slot_volatile_is_clear": 8,
+     "library:dfi_sort_front": 320,
+     "library:dfi_speed_key": 112,
+     "library:dfi_spicy_spray": 32,
+     "library:dfi_stage_accuracy": 8,
+     "library:dfi_stage_stat": 8,
+     "library:dfi_stat_points_valid": 8,
+     "library:dfi_state_check": 8,
+     "library:dfi_state_check_mode": 368,
+     "library:dfi_state_check_query": 8,
+     "library:dfi_state_check_since": 8,
+     "library:dfi_state_encoded_size_of": 16,
+     "library:dfi_state_schema_of": 16,
+     "library:dfi_static.isra": 64,
+     "library:dfi_status_effects": 448,
+     "library:dfi_status_hit_end": 16,
+     "library:dfi_step_query_slice": 208,
+     "library:dfi_step_slice": 64,
+     "library:dfi_sturdy_saves.isra": 128,
+     "library:dfi_substitute_takes": 224,
+     "library:dfi_swap": 16,
+     "library:dfi_swap_position_state": 80,
+     "library:dfi_switch_in.constprop": 528,
+     "library:dfi_switch_trapped": 80,
+     "library:dfi_symbiosis": 176,
+     "library:dfi_tail_clear_occupant": 144,
+     "library:dfi_tail_clear_occupant.part.0": 144,
+     "library:dfi_target_candidates": 8,
+     "library:dfi_target_class_for_types": 8,
+     "library:dfi_terminal": 96,
+     "library:dfi_terrain_change": 144,
+     "library:dfi_thief": 192,
+     "library:dfi_thread_main": 96,
+     "library:dfi_toxic_debris.isra": 112,
+     "library:dfi_try_hit_abilities": 272,
+     "library:dfi_try_status": 256,
+     "library:dfi_turn_run": 592,
+     "library:dfi_turn_start": 240,
+     "library:dfi_type_booster_base_power": 8,
+     "library:dfi_type_damage": 8,
+     "library:dfi_types_of": 48,
+     "library:dfi_u64": 8,
+     "library:dfi_unburden_on_take": 8,
+     "library:dfi_unnerved": 8,
+     "library:dfi_update": 224,
+     "library:dfi_use_item": 32,
+     "library:dfi_use_item_core": 144,
+     "library:dfi_user_target_class": 48,
+     "library:dfi_vacate": 48,
+     "library:dfi_validate.constprop": 256,
+     "library:dfi_version_features.part.0": 72,
+     "library:dfi_view_counter_support": 816,
+     "library:dfi_view_encode.part.0": 528,
+     "library:dfi_view_observation_causes": 80,
+     "library:dfi_view_visible_causes.constprop": 816,
+     "library:dfi_weather_heal": 96,
+     "library:dfi_weather_suppression_scan": 16,
+     "library:dfi_white_herb": 32,
+     "library:dfi_will_move": 8,
+     "library:dfi_win_result": 8,
+     "library:duoforge_batch_create": 80,
+     "library:duoforge_batch_destroy": 32,
+     "library:duoforge_batch_env": 8,
+     "library:duoforge_batch_env_count": 8,
+     "library:duoforge_batch_env_episode": 8,
+     "library:duoforge_batch_expand": 144,
+     "library:duoforge_batch_expand_digest": 144,
+     "library:duoforge_batch_from_view": 96,
+     "library:duoforge_batch_observe_ext": 48,
+     "library:duoforge_batch_play_random": 64,
+     "library:duoforge_batch_public": 96,
+     "library:duoforge_batch_public_causes": 96,
+     "library:duoforge_batch_query": 80,
+     "library:duoforge_batch_query_encoded": 128,
+     "library:duoforge_batch_query_factored": 80,
+     "library:duoforge_batch_reset": 8,
+     "library:duoforge_batch_reset_setups": 8320,
+     "library:duoforge_batch_reset_terminal": 48,
+     "library:duoforge_batch_seeds": 16,
+     "library:duoforge_batch_step": 80,
+     "library:duoforge_batch_step_factored": 112,
+     "library:duoforge_batch_step_indices": 112,
+     "library:duoforge_batch_step_query": 192,
+     "library:duoforge_battle_candidates": 144,
+     "library:duoforge_battle_check": 8,
+     "library:duoforge_battle_clone": 32,
+     "library:duoforge_battle_copy": 32,
+     "library:duoforge_battle_create": 1168,
+     "library:duoforge_battle_create_decoded": 1408,
+     "library:duoforge_battle_decode": 1424,
+     "library:duoforge_battle_destroy": 8,
+     "library:duoforge_battle_digest": 1456,
+     "library:duoforge_battle_encode": 64,
+     "library:duoforge_battle_encoded_size": 32,
+     "library:duoforge_battle_equal": 2816,
+     "library:duoforge_battle_factored": 1312,
+     "library:duoforge_battle_from_view": 8,
+     "library:duoforge_battle_from_view.part.0": 4672,
+     "library:duoforge_battle_hypothesis": 1888,
+     "library:duoforge_battle_observe": 944,
+     "library:duoforge_battle_observe_ext": 400,
+     "library:duoforge_battle_public": 8,
+     "library:duoforge_battle_public.part.0": 1472,
+     "library:duoforge_battle_public_causes": 64,
+     "library:duoforge_battle_request": 96,
+     "library:duoforge_battle_reseed": 32,
+     "library:duoforge_battle_result": 32,
+     "library:duoforge_battle_step": 48,
+     "library:duoforge_battle_step_events": 48,
+     "library:duoforge_battle_tiebreak": 464,
+     "library:duoforge_context_active_per_side": 16,
+     "library:duoforge_context_create": 192,
+     "library:duoforge_context_destroy": 8,
+     "library:duoforge_context_fingerprint": 8,
+     "library:duoforge_data_ability_static": 80,
+     "library:duoforge_data_count": 80,
+     "library:duoforge_data_find": 96,
+     "library:duoforge_data_forme_info": 208,
+     "library:duoforge_data_forme_moves": 176,
+     "library:duoforge_data_forme_static": 144,
+     "library:duoforge_data_item_static": 80,
+     "library:duoforge_data_mega_at": 144,
+     "library:duoforge_data_mega_count": 128,
+     "library:duoforge_data_member_setup_valid": 176,
+     "library:duoforge_data_move_static": 96,
+     "library:duoforge_data_name": 96,
+     "library:duoforge_data_nature_static": 96,
+     "library:duoforge_data_request_target_class": 112,
+     "library:duoforge_data_supported": 96,
+     "library:duoforge_data_type_effect": 96,
+     "library:duoforge_encode": 448,
+     "library:duoforge_encoder_size": 8,
+     "library:duoforge_eval_workspace_create": 8,
+     "library:duoforge_eval_workspace_destroy": 8,
+     "library:duoforge_evaluator_destroy": 8,
+     "library:duoforge_evaluator_load": 8,
+     "library:duoforge_hp_display": 16,
+     "library:duoforge_move_result": 96,
+     "library:duoforge_observation_causes": 16,
+     "library:duoforge_public_queue_mask": 3536,
+     "library:duoforge_public_record_check": 3232,
+     "library:duoforge_reference_setup": 1104,
+     "library:duoforge_search_seeds": 8,
+     "library:duoforge_status_name": 8,
+     "library:duoforge_version_string": 8,
+     "library:layout.constprop": 48,
+     "library:mr_effect_value.isra": 56,
+     "library:neutral": 272,
+     "library:queue_canonical": 80,
+     "library:residual": 160,
+     "library:rounded_divide": 32,
+     "library:scaled_product": 80,
+     "library:state": 144,
+     "library:tile_slice": 496,
+     "library:trace_row": 32
+    },
+    "text": {
+     "bench": 455196,
+     "library": 490636
+    }
+   }
+  }
+ },
+ "object_identity": {
+  "debug": {
+   "compared": 293,
+   "differing": [
+    "CMakeFiles/duoforge.dir/src/combat/items/families.c.o",
+    "CMakeFiles/duoforge.dir/src/combat/items/white_herb.c.o",
+    "CMakeFiles/duoforge.dir/src/combat/turn.c.o",
+    "CMakeFiles/duoforge_shared.dir/src/combat/items/families.c.o",
+    "CMakeFiles/duoforge_shared.dir/src/combat/items/white_herb.c.o",
+    "CMakeFiles/duoforge_shared.dir/src/combat/turn.c.o",
+    "bench/CMakeFiles/duoforge_bench.dir/main.c.o",
+    "libduoforge.a",
+    "libduoforge_shared.so",
+    "tests/CMakeFiles/duoforge_combat_ability_family.dir/abilities/test_ability_family.c.o",
+    "tests/CMakeFiles/duoforge_state_pool_a2a.dir/abilities/test_pool_a2a.c.o"
+   ],
+   "library_after": "a18079488e30ad0d96986f0654cb773003332c7b714763d272d439942afe15a3",
+   "library_before": "6175f5c8a608af9a77fe8254211888597e7c21d40048dad3132eb82556d220b4"
+  },
+  "ipo": {
+   "compared": 295,
+   "differing": [
+    "CMakeFiles/_CMakeLTOTest-C/bin/CMakeFiles/boo.dir/main.c.o",
+    "CMakeFiles/_CMakeLTOTest-C/bin/CMakeFiles/foo.dir/foo.c.o",
+    "CMakeFiles/duoforge.dir/src/combat/items/families.c.o",
+    "CMakeFiles/duoforge.dir/src/combat/items/white_herb.c.o",
+    "CMakeFiles/duoforge.dir/src/combat/turn.c.o",
+    "CMakeFiles/duoforge.dir/src/state/request.c.o",
+    "CMakeFiles/duoforge_shared.dir/src/combat/items/families.c.o",
+    "CMakeFiles/duoforge_shared.dir/src/combat/items/white_herb.c.o",
+    "CMakeFiles/duoforge_shared.dir/src/combat/turn.c.o",
+    "CMakeFiles/duoforge_shared.dir/src/state/request.c.o",
+    "bench/CMakeFiles/duoforge_bench.dir/main.c.o",
+    "libduoforge.a",
+    "libduoforge_shared.so",
+    "tests/CMakeFiles/duoforge_combat_ability_family.dir/abilities/test_ability_family.c.o",
+    "tests/CMakeFiles/duoforge_combat_move_rules.dir/moves/test_move_rules.c.o",
+    "tests/CMakeFiles/duoforge_state_pool_a2a.dir/abilities/test_pool_a2a.c.o",
+    "tests/CMakeFiles/duoforge_state_pool_g86.dir/moves/test_pool_g86.c.o"
+   ],
+   "library_after": "0a1d38555bf6032fe5d9057ab44d7558ef55e6bde7342ba8beee785ae441cc5a",
+   "library_before": "6c58d4f9c3eb3074f823b0e96131c683280ebc2107d00a6773a1e923ffd1a896"
+  },
+  "noipo": {
+   "compared": 293,
+   "differing": [
+    "CMakeFiles/duoforge.dir/src/combat/items/white_herb.c.o",
+    "CMakeFiles/duoforge.dir/src/combat/turn.c.o",
+    "CMakeFiles/duoforge_shared.dir/src/combat/items/white_herb.c.o",
+    "CMakeFiles/duoforge_shared.dir/src/combat/turn.c.o",
+    "bench/CMakeFiles/duoforge_bench.dir/main.c.o",
+    "libduoforge.a",
+    "libduoforge_shared.so"
+   ],
+   "library_after": "57d79859671ef2d0dbfa80a63d33dd98c7a437ec348a612f436c4eb52cfeffbd",
+   "library_before": "2a239e54cd3cc3788cd7a1a654e54cd487c89dd0681804f7e2c3c7e1131e6595"
+  }
+ }
+}

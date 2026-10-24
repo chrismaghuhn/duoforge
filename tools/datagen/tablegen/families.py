@@ -1,8 +1,8 @@
 """What the item and ability families share: the parameter codes of weather and terrain, the family
 derivation from one strict pattern, the handler ids and the rows the turn code implements by id.
 
-Part of the table generator tools/datagen/gen_closure.py (restructure step 5: split by area; every
-statement is unchanged from gen_closure.py@8800b625).
+Part of the table generator tools/datagen/gen_closure.py (restructure step 5: split by area from
+gen_closure.py@8800b625).
 """
 
 from .source import fail, fields, NoMatch
@@ -46,7 +46,10 @@ ENGINE_ROWS = {'items': ['airballoon', 'ironball', 'bindingband', 'focussash', '
                              'steadfast', 'weakarmor', 'telepathy', 'voltabsorb', 'punkrock', 'moxie', 'synchronize', 'oblivious', 'keeneye', 'bigpecks', 'magicbounce', 'pressure', 'stancechange',
                              'sandforce', 'shellarmor', 'filter', 'stalwart', 'megalauncher', 'hugepower', 'thickfat', 'firemane', 'spicyspray', 'megasol', 'cloudnine', 'sheerforce', 'illusion', 'symbiosis', 'frisk',
                              'unaware', 'marvelscale', 'waterbubble', 'reckless', 'superluck', 'moody', 'cutecharm', 'purepower', 'battlearmor',
-                             'magmaarmor', 'angerpoint', 'sniper', 'piercingdrill']}
+                             'magmaarmor', 'angerpoint', 'sniper', 'piercingdrill',
+                             # A2a (decision 0015 entry 5dy): one clause each at an existing hook (abilities.py A2A_ABILITY_FACTS)
+                             'illuminate', 'whitesmoke', 'waterabsorb', 'eartheater', 'motordrive', 'icebody', 'surgesurfer',
+                             'quickfeet', 'corrosion', 'purifyingsalt', 'gooey', 'poisonpoint', 'tangledfeet', 'naturalcure']}
 
 
 def derive_family(src, champ, rid, expected, matchers, what):

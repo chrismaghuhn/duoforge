@@ -2,7 +2,7 @@
 
 #include "core/arith.h"
 #include "core/bytes.h"
-#include "data/pool_tables.h"
+#include "data/formats/reg-mc/pool_tables.h"
 #include "state/closure_member.h"
 #include "state/context_internal.h"
 #include "state/identity.h"

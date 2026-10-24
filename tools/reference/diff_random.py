@@ -1131,7 +1131,7 @@ def extended_counts(root=None):
     pool tables keep these ids, so an id below them is Team C data and one at or above them is the pool's."""
     root = root or base.ROOT
     if root not in _extended_counts:
-        text = trace_to_c.read_ascii(os.path.join(root, 'src', 'data', 'extended_tables.h'))
+        text = trace_to_c.read_ascii(os.path.join(root, 'src', 'data', 'formats', 'reg-mc', 'extended_tables.h'))
         _extended_counts[root] = {k: int(re.search(r'#define DFI_EXT_%s_COUNT (\d+)u' % k, text).group(1))
                                   for k in ('FORME', 'MOVE', 'ITEM', 'ABILITY')}
     return _extended_counts[root]
@@ -1148,12 +1148,12 @@ _forme_sets = {}
 
 
 def forme_sets(root=None):
-    """[(set moves, ability id)] for each forme id, read from the generated pool tables (src/data/pool_tables.c,
+    """[(set moves, ability id)] for each forme id, read from the generated pool tables (src/data/formats/reg-mc/pool_tables.c,
     dfi_pool_formes): the Team C set of a forme, which the CLOSURE and TEAM_C kinds hold a member to (dfi_forme_move_legal
     and dfi_forme_ability_legal, src/state/closure_member.c). Only the lookup is here; the legality rule is the engine's."""
     root = root or base.ROOT
     if root not in _forme_sets:
-        source = trace_to_c.read_ascii(os.path.join(root, 'src', 'data', 'pool_tables.c'))
+        source = trace_to_c.read_ascii(os.path.join(root, 'src', 'data', 'formats', 'reg-mc', 'pool_tables.c'))
         start = source.index('dfi_pool_formes[DFI_POOL_FORME_COUNT] = {')
         rows = re.findall(r'\{\d+u, \d+u, \{[^}]*\}, \{[^}]*\}, (\d+)u, [^,]+, [^,]+, [^,]+, [^,]+, [^,]+, [^,]+, (\d+)u, \{([^}]*)\}\}',
                           source[start:source.index('\n};', start)])

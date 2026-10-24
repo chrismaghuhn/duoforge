@@ -1,0 +1,47 @@
+{
+ "source": "moves/test_pool_g48.c",
+ "support": {
+  "header": "support/conformance_replay.h",
+  "items": {
+   "build_setup": "df_conf_build_setup",
+   "bundle_of": "df_conf_bundle_of",
+   "find": "df_conf_find"
+  }
+ },
+ "shared_blocks": [
+  0,
+  11
+ ],
+ "parts": [
+  {
+   "file": "moves/test_hits_taken_hazard_moves.c",
+   "calls": [
+    "check_facts"
+   ],
+   "main_blocks": [
+    0,
+    1,
+    2,
+    3,
+    4,
+    8,
+    9,
+    10,
+    11
+   ],
+   "header": "step G48 of the content expansion, the moves that use the tail's rev 4 fields that already exist, as one batch: Rage Fist (the position's hits_taken), Stone Axe and Ceaseless Edge (a hazard on the foe's side after a hit, the G37 add: Stealth Rock, one Spikes layer) and Population Bomb (ten hits, multiaccuracy; its accuracy 90 is covered by the later-hit proof of G33). Their marks, handler numbers and pinned numbers; and, after every step of the recorded g48_* battles replayed with the reference's draws, the hits each position has taken since it came in (one per damaging hit, saturating at 6, cleared when the occupant leaves) and the hazard layers of each side, against rows derived from the committed traces. The reference's own lines are compared by duoforge.reference.conformance_pool_data.\n\nSplit by subject from the test of step G48 (restructure step 6e; tests/renames.tsv maps the old name)."
+  },
+  {
+   "file": "moves/test_rage_fist.c",
+   "calls": [
+    "check_bound",
+    "check_power"
+   ],
+   "header": "step G48 of the content expansion, Rage Fist's bound and power: six hits taken is the largest valid value and a seventh is refused by the invariants; the power is 50 + 50 per hit, so the damage of g48_rage_fist_a's Annihilape with 0, 1, 5 and 6 hits taken grows with 50, 100, 300 and 350 (the cap at six hits, which no recorded battle reaches).\n\nSplit by subject from the test of step G48 (restructure step 6e; tests/renames.tsv maps the old name).",
+   "main_blocks": [
+    0,
+    11
+   ]
+  }
+ ]
+}

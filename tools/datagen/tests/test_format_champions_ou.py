@@ -6,9 +6,9 @@ Without a checkout, with code of its own, this test checks that:
   - the definition loads: its id, its keys, its facts, the pool source it names (sha256, Showdown commit, format id);
   - the facts agree with the rules block of the pool source (what the pinned rule table said when the pool was made):
     singles, six of six with no pick, level 50, four moves, 66 Stat Points, the clauses, the banlist;
-  - the definition is not the engine's format: it writes no header and src/data/format_tables.h stays Reg M-C's;
+  - the definition is not the engine's format: it writes no header and src/data/formats/reg-mc/format_tables.h stays Reg M-C's;
   - the pool lies inside today's pool tables: every forme (a row or a cosmetic alias), move, item and ability of the
-    pool is a row of src/data/pool_tables.c, except the battle-only formes named here, which are not rows for Reg
+    pool is a row of src/data/formats/reg-mc/pool_tables.c, except the battle-only formes named here, which are not rows for Reg
     M-C either;
   - the pool differs from Reg M-C's only by entries that the format's banlist, clauses or tiers remove: no entry is
     in Champions OU that Reg M-C lacks.
@@ -96,7 +96,7 @@ class ChampionsOuDefinition(unittest.TestCase):
         self.assertNotIn('champions-ou', read(gen_format.HEADER))
 
     def test_the_pool_lies_inside_the_pool_tables(self):
-        source = read('src/data/pool_tables.c')
+        source = read('src/data/formats/reg-mc/pool_tables.c')
         a = source.index('dfi_pool_forme_aliases[')
         aliases = set(re.findall(r'\{"([a-z0-9]+)",', source[a:source.index('\n};', a)]))
         rows = {'species': table_names(source, 'dfi_pool_forme_names') | aliases,

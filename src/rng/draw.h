@@ -22,7 +22,7 @@
 
 #include "rng/pcg32.h"
 
-/* Stable site ids (recorded in fixtures; never renumber). */
+/* Stable site ids (recorded in fixtures; never renumber). Each has its line in draw_sites.def (checked below). */
 #define DFI_SITE_SPEED_TIE 1u      /* shuffle of a tied group: random(i, n) */
 #define DFI_SITE_ACCURACY 2u       /* random(100) < accuracy */
 #define DFI_SITE_CRIT 3u           /* random(24) or random(8) == 0 */
@@ -52,68 +52,27 @@
                                     * draw), then of the stats that can fall (random(n), no draw for an empty list); data/abilities.ts:2701-2734 */
 #define DFI_SITE_CUTE_CHARM 24u    /* Cute Charm (POOL data, step G71, decision 0034): randomChance(3, 10), random(10) < 3, per contact hit on a damaged holder */
 #define DFI_SITE_ATTRACT 25u       /* Attract (POOL data, step G71, decision 0034): randomChance(1, 2) at BeforeMove priority 2, random(2) < 1 */
+#define DFI_SITE_POISON_POINT 26u  /* Poison Point (POOL data, A2a, decision 0015 entry 5dy; HS grant): randomChance(3, 10), random(10) < 3 */
 #define DFI_SITE_ALLY_SWITCH 33u /* Ally Switch's consecutive use (POOL data, step G80, decision 0044): randomChance(1, 3^level), random(3^level) == 0 */
-#define DFI_SITE_COUNT 34u /* gaps are fine: dfi_draw checks site < COUNT (HS ranges: sites 24-31 unused, 32 G90, 33 G80) */
+#define DFI_SITE_COUNT 34u /* gaps are fine: dfi_draw checks site < COUNT; the free ids and who hands them out: docs/process/NUMBERS.md */
 
-/* The name of a draw site, for the tests and the debug paths. A new site needs its case here; the switch is the build-time guard: a
- * duplicate site value is a duplicate case value, a compile error on every compiler (see residual_order.h for the residual kinds). */
+/* Build-time guard (restructure step 5c): every DFI_SITE_<NAME> has the id of its line in draw_sites.def, the frozen record of
+ * the ids, and every id is below DFI_SITE_COUNT. */
+#define DFI_DRAW_SITE(name, value, text) \
+    _Static_assert(DFI_SITE_##name == (value) && (value) < DFI_SITE_COUNT, "DFI_SITE_" #name " keeps its id in draw_sites.def");
+#include "rng/draw_sites.def"
+#undef DFI_DRAW_SITE
+
+/* The name of a draw site, for the tests and the debug paths: one case per line of draw_sites.def. The switch is the
+ * build-time guard against two sites with one id: a duplicate case value is a compile error on every compiler. */
 static inline const char *dfi_site_name(uint32_t site)
 {
     switch (site) {
-    case DFI_SITE_SPEED_TIE:
-        return "speed-tie";
-    case DFI_SITE_ACCURACY:
-        return "accuracy";
-    case DFI_SITE_CRIT:
-        return "crit";
-    case DFI_SITE_DAMAGE_ROLL:
-        return "damage-roll";
-    case DFI_SITE_SECONDARY:
-        return "secondary";
-    case DFI_SITE_STALL:
-        return "stall";
-    case DFI_SITE_SLEEP_TURNS:
-        return "sleep-turns";
-    case DFI_SITE_FREEZE_THAW:
-        return "freeze-thaw";
-    case DFI_SITE_FULL_PARALYSIS:
-        return "full-paralysis";
-    case DFI_SITE_CONFUSION_TURNS:
-        return "confusion-turns";
-    case DFI_SITE_CONFUSION_HIT:
-        return "confusion-hit";
-    case DFI_SITE_RANDOM_TARGET:
-        return "random-target";
-    case DFI_SITE_STATUS_PICK:
-        return "status-pick";
-    case DFI_SITE_INSERT_TIE:
-        return "insert-tie";
-    case DFI_SITE_TRACE:
-        return "trace";
-    case DFI_SITE_POISON_TOUCH:
-        return "poison-touch";
-    case DFI_SITE_CURSED_BODY:
-        return "cursed-body";
-    case DFI_SITE_FLAME_BODY:
-        return "flame-body";
-    case DFI_SITE_STATIC:
-        return "static";
-    case DFI_SITE_DRAG:
-        return "drag";
-    case DFI_SITE_LOCK_TURNS:
-        return "lock-turns";
-    case DFI_SITE_MULTIHIT_COUNT:
-        return "multihit-count";
-    case DFI_SITE_MOODY:
-        return "moody";
-    case DFI_SITE_PARTIAL_TRAP_TURNS:
-        return "partial-trap-turns";
-    case DFI_SITE_ALLY_SWITCH:
-        return "ally-switch";
-    case DFI_SITE_CUTE_CHARM:
-        return "cute-charm";
-    case DFI_SITE_ATTRACT:
-        return "attract";
+#define DFI_DRAW_SITE(name, value, text) \
+    case DFI_SITE_##name:            \
+        return text;
+#include "rng/draw_sites.def"
+#undef DFI_DRAW_SITE
     default:
         return NULL;
     }

@@ -176,7 +176,7 @@ merge, never resolved by hand):
 
 | Artifact | Replaces |
 |---|---|
-| `src/data/pool_tables.{h,c}`: the special, family and flag columns; new, a family column for moves | the generator's `SPECIAL_*` and `POOL_*` lists |
+| `src/data/formats/reg-mc/pool_tables.{h,c}`: the special, family and flag columns; new, a family column for moves | the generator's `SPECIAL_*` and `POOL_*` lists |
 | `src/data/support_manifest.c` | the hand-edited marks (1,017 lines, touched by every step) |
 | `src/combat/generated/hooks_{moves,abilities,items}.{h,c}`: hook masks, one switch per hook point, the prototypes | the `md->special ==` chains and the allow-list (plan item 5) |
 | `src/combat/generated/draw_sites.h`, `residual_kinds.h`: ids and the name switch, which stays the compile-time duplicate guard | the hand lists in `rng/draw.h` and `residual_order.h` |

@@ -1,0 +1,26 @@
+{
+ "source": "moves/test_pool_g86.c",
+ "parts": [
+  {
+   "file": "moves/test_power_move_rows.c",
+   "calls": [
+    "test_marks"
+   ],
+   "header": "step G86 of the content expansion (decision 0015 5cn), the power moves as one batch: the handlers Heavy Slam, Hard Press, Ice Spinner and Belly Drum and the data rows Body Slam, Razor Shell and Tickle are marked, with the generated handler ids; Minimize stays unmarked (the minimize flag of Body Slam and Heavy Slam is inert). The recorded battles g86_* are replayed by duoforge.reference.conformance_pool_data.\n\nSplit by subject from the test of step G86 (restructure step 6e; tests/renames.tsv maps the old name)."
+  },
+  {
+   "file": "moves/test_heavy_slam.c",
+   "calls": [
+    "test_heavy_slam_power"
+   ],
+   "header": "step G86 of the content expansion (decision 0015 5cn), Heavy Slam's base power by the ratio of the user's weight to the target's, in hectograms, at the boundaries of each multiple (the pin's tests, >= on each).\n\nSplit by subject from the test of step G86 (restructure step 6e; tests/renames.tsv maps the old name)."
+  },
+  {
+   "file": "moves/test_hard_press.c",
+   "calls": [
+    "test_hard_press_power"
+   ],
+   "header": "step G86 of the content expansion (decision 0015 5cn), Hard Press's base power: the pin's integer form of its formula, checked against the values of the pin's own double arithmetic (33 of 100 HP gives 32, not 33; the full HP 100; the minimum 1).\n\nSplit by subject from the test of step G86 (restructure step 6e; tests/renames.tsv maps the old name)."
+  }
+ ]
+}

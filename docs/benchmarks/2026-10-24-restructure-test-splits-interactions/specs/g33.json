@@ -1,0 +1,20 @@
+{
+ "source": "interactions/test_pool_g33.c",
+ "parts": [
+  {
+   "file": "interactions/test_multi_hit_mirror_armor_rows.c",
+   "calls": [
+    "check_facts"
+   ],
+   "header": "step G33 of the content expansion, the multi-hit moves Dual Wingbeat, Twin Beam and Triple Axel and the ability Mirror Armor: the marks and the handler numbers (the hit counts are in the handler ids; the static hit columns have no reader in the engine, duoforge.data.static_unread checks that), and Triple Axel's accuracy 90. The recorded battles g33_* are replayed by duoforge.reference.conformance_pool_data.\n\nSplit by subject from the test of step G33 (restructure step 6e; tests/renames.tsv maps the old name)."
+  },
+  {
+   "file": "interactions/test_multiaccuracy_later_hits.c",
+   "calls": [
+    "check_proven_accuracy",
+    "check_refusal"
+   ],
+   "header": "step G33 of the content expansion, the later hits of a multiaccuracy move: they are checked with the loop's own arithmetic (scripts.ts:481-510), proved for the accuracy 90 only (every multiaccuracy move of the pool has it, another accuracy is refused), and the engine plays it only without a ModifyAccuracy handler on the user: a Triple Axel user with Wide Lens is refused at its second hit, E_UNSUPPORTED, never played with the first hit's arithmetic.\n\nSplit by subject from the test of step G33 (restructure step 6e; tests/renames.tsv maps the old name)."
+  }
+ ]
+}

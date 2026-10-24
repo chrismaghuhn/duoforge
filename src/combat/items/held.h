@@ -2,6 +2,7 @@
 #define DUOFORGE_COMBAT_ITEMS_HELD_H
 
 /* Hot held-item access stays visible to every caller, including without IPO. */
+#include "core/inline.h"
 #include "state/battle_internal.h"
 
 /* The item a member holds now, stored as 1 + id (0 = none): the one the member's sheet says unless it has been used
@@ -10,7 +11,7 @@
  * yet). Every rule of the turn code reads the item through this, never through dfi_member.item, which is the sheet's
  * (and what the Mega Evolution reads: a Mega Stone is never taken from its own species). `m` is a member of `b`; no
  * heap, one tail read for a member that is found on a side. */
-static inline uint32_t dfi_item_code(const struct duoforge_battle *b, const dfi_member *m)
+static DFI_ALWAYS_INLINE uint32_t dfi_item_code(const struct duoforge_battle *b, const dfi_member *m)
 {
     if (m == NULL || m->item_consumed != 0u) {
         return 0u; /* used up, whichever item it was */
@@ -32,7 +33,7 @@ static inline uint32_t dfi_item_code(const struct duoforge_battle *b, const dfi_
 }
 
 /* The member holds item `id` and has not used it up or lost it (items are stored as 1 + id). */
-static inline bool dfi_holds(const struct duoforge_battle *b, const dfi_member *m, uint32_t id)
+static DFI_ALWAYS_INLINE bool dfi_holds(const struct duoforge_battle *b, const dfi_member *m, uint32_t id)
 {
     return m != NULL && dfi_item_code(b, m) == 1u + id;
 }

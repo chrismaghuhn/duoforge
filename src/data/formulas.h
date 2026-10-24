@@ -26,6 +26,6 @@ bool dfi_champions_stat(uint32_t stat, uint32_t base, uint32_t stat_points, uint
  * value that is not a multiple of 5 is rejected. */
 bool dfi_champions_pp_max(uint32_t pp_base, bool no_pp_boosts, uint8_t *out);
 
-#include "data/format_tables.h" /* the format facts (restructure step 10) */
+#include "data/formats/reg-mc/format_tables.h" /* the format facts (restructure step 10) */
 
 #endif

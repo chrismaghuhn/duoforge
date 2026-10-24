@@ -1,6 +1,6 @@
 # Closure data generator
 
-`gen_closure.py` writes `src/data/closure_tables.h` and `src/data/closure_tables.c`: the immutable data of the two reference teams (decision `0004`), read from the pinned Pokémon Showdown checkout (decision `0006` section 2).
+`gen_closure.py` writes `src/data/formats/reg-mc/closure_tables.h` and `src/data/formats/reg-mc/closure_tables.c`: the immutable data of the two reference teams (decision `0004`), read from the pinned Pokémon Showdown checkout (decision `0006` section 2).
 
 It is offline tooling. The generated files are committed, so building and testing DuoForge needs neither Python nor Showdown.
 
@@ -11,7 +11,8 @@ area. Each module imports from the ones above it only:
 
 | Module | Content |
 |---|---|
-| `tablegen/source.py` | the pin, the input hashes, `Source` (a pinned file read with its hash checked), the entry parsers and the pattern helpers |
+| `tablegen/source.py` | the pin, the input hashes, the rule sets (`RULE_SETS`), `Source` (a pinned file read with its hash checked), the entry parsers and the pattern helpers |
+| `tablegen/formats.py` | the table set of `--format <id>`: the tables section of `data/formats/<id>.json`, read and checked |
 | `tablegen/species.py` | formes and Pokémon: the team sets, the forme and type chart parsers, the format's legal pool, learnsets, forme legality |
 | `tablegen/moves.py` | moves: the move parser, its key, flag, target and status tables, the special handlers and their pinned callbacks by step, the move and field-condition facts |
 | `tablegen/families.py` | what item and ability families share: the weather and terrain parameter codes, the family derivation, the handler ids, the rows the turn code implements by id |
@@ -20,6 +21,24 @@ area. Each module imports from the ones above it only:
 | `tablegen/rules.py` | the pin checks of steps that span several areas and the content batches (C1, C2, C4, C5, K2, A0, A0P1) |
 | `tablegen/tables.py` | the closure, Team C and pool builds and the width bounds of the pool |
 | `tablegen/output.py` | the canonical byte forms and the C writers |
+
+### The table set of a format
+
+`--pool --format <id>` (default `reg-mc`) builds the tables that the `tables` section of `data/formats/<id>.json` names
+(`gen_format.py` checks its shape; every key is required, a missing or unknown one fails by name):
+
+| Key | Meaning | Reg M-C |
+|---|---|---|
+| `rule_set` | what the format reads on top of the base data: the override files by role, their pinned sha256 and the PP cap (`RULE_SETS` in `tablegen/source.py`); an unknown name fails | `champions` (cap 20) |
+| `symbol_prefix`, `include_guard`, `stem` | the writer's names: `dfi_<prefix>_*` and `DFI_<PREFIX>_*`, the guard, `src/data/formats/<id>/<stem>.{h,c}` | `pool`, `DUOFORGE_DATA_POOL_TABLES_H`, `pool_tables` |
+| `learnset_bytes` | the width of a forme's learnable bitset; fewer bits than pool moves fail | 64 |
+| `bounds` | the id bounds of the set: `formes`, `moves`, `moves_per_forme`, `items`, `abilities`; the pool must fit them and they must fit the engine's fields | 65534, 65535, 512, 254, 254 |
+| `excluded_formes` | formes of the pool the tables leave out, each `{id, reason}`; the reason is written into the header, an id not in the pool fails, and so does one that a Mega or a cosmetic forme of the pool needs | none |
+
+The pool (`pool.source`) must be the validator's output for the definition's `showdown_format_id` at the pin. A
+definition without a `tables` section builds no tables (`champions-ou` today). `tests/test_table_sets.py` plays the
+parameters through with a made-up second format (`duoforge.data.table_sets`, and with the checkout the whole-pool
+build, `duoforge.data.table_sets_pinned`).
 
 Every name of these modules is still readable as `gen_closure.<name>`, which the tests and `classify_unsupported.py`
 use. A new step adds its facts and checks to the module of its area, or to `rules.py` when they span areas.
@@ -60,7 +79,7 @@ After regenerating, update the two file hashes in `tests/CMakeLists.txt` and the
 `data/formats/reg-mc.json` (restructure step 10, `docs/architecture/formats.md`) names the Showdown format id and the pool source (`data/formats/pools/reg-mc.json` with its SHA-256); `--pool` reads both from it. `gen_format.py` writes the engine's format constants:
 
 ```sh
-python3 tools/datagen/gen_format.py                    # write src/data/format_tables.h
+python3 tools/datagen/gen_format.py                    # write src/data/formats/reg-mc/format_tables.h
 python3 tools/datagen/gen_format.py --check            # compare only (duoforge.data.format_regmc)
 python3 tools/datagen/gen_format.py --pin <checkout>   # every fact against its pinned line (duoforge.data.format_pin)
 ```
@@ -78,8 +97,8 @@ python3 tools/datagen/tests/check_format_pool.py node <checkout> champions-ou  #
 Two more modes write tables that start with the closure:
 
 ```sh
-python3 tools/datagen/gen_closure.py <pinned checkout> --team-c [--check]  # src/data/extended_tables.{h,c} (decision 0009)
-python3 tools/datagen/gen_closure.py <pinned checkout> --pool [--check]    # src/data/pool_tables.{h,c} (decision 0015)
+python3 tools/datagen/gen_closure.py <pinned checkout> --team-c [--check]  # src/data/formats/reg-mc/extended_tables.{h,c} (decision 0009)
+python3 tools/datagen/gen_closure.py <pinned checkout> --pool [--check]    # src/data/formats/reg-mc/pool_tables.{h,c} (decision 0015)
 ```
 
 `--pool` writes the extended tables unchanged as the prefix, then the rows that the steps of the content expansion add (step P1: 16 type boosters, 17 resist berries and the abilities Pixilate, Refrigerate, Overgrow, Torrent and Swarm; step G2: the formes Pelipper, Arcanine-Hisui, Annihilape, Floette-Eternal and Floette-Mega, 22 moves, the items Focus Sash, Expert Belt and Floettite and the abilities Rock Head, Flower Veil and Fairy Aura), in a fixed order that the generator documents. It checks the prefix before it writes: every extended and every closure row is field-equal, and the canonical bytes recomputed from the prefix equal those of the closure and of the extended tables. The closure and `--team-c` output stays byte-identical (`--check`).
