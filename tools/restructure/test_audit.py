@@ -21,9 +21,11 @@ split, merge), the new file and CTest name, and the state (planned or done). The
 
 Stdlib only.
 """
+import os
 import re
 import subprocess
 import sys
+import tempfile
 from pathlib import Path
 
 COLUMNS = ['old_file', 'old_ctest', 'action', 'new_file', 'new_ctest', 'state', 'subject']
@@ -130,19 +132,37 @@ def check(root):
             problems.append('%s: a historical name without a row in %s' % (src, TABLE))
     done = [r for r in rows if r['state'] == 'done' and r['action'] != 'part']
     if done:
-        # One pass per file: every old CTest name and every old file name in one alternation (a pattern per name and file
-        # took a minute over the tree), longest first so that no name hides a longer one.
         olds = {r['old_ctest']: r['old_ctest'] for r in done}
         olds.update({Path(r['old_file']).name: r['old_file'] for r in done})
-        pattern = re.compile(r'(?<![\w])(?:%s)(?![\w])' % '|'.join(re.escape(o) for o in sorted(olds, key=len, reverse=True)))
-        for name in living_files(root):
-            try:
-                text = (root / name).read_text(encoding='utf-8')
-            except (UnicodeDecodeError, OSError):
-                continue
-            for old in sorted({olds[m.group(0)] for m in pattern.finditer(text)}):
+        for name, found in sorted(old_names_in_living_files(root, olds).items()):
+            for old in sorted(found):
                 problems.append('%s: still names %s (renamed, see %s)' % (name, old, TABLE))
     return problems
+
+
+def old_names_in_living_files(root, olds):
+    """{living file: {old name the table maps to}} for every old name (a key of `olds`) that a living file names as a word:
+    neither a word character before it nor after it. One `git grep` over the tracked files with every name as a fixed
+    string (-F -w): a Python alternation over the tree took 17 s here and a minute on the CI runner. Binary files are
+    skipped (-I), as a file that is no UTF-8 text was before."""
+    excludes = [':(exclude)%s' % TABLE] + [':(exclude)%s' % d for d in FROZEN]
+    with tempfile.NamedTemporaryFile('w', encoding='utf-8', suffix='.txt', delete=False) as f:
+        f.write(''.join(o + '\n' for o in sorted(olds)))
+        patterns = f.name
+    try:
+        run = subprocess.run(['git', 'grep', '-I', '-o', '-w', '-F', '-h', '--null', '-H', '-f', patterns, '--', '.']
+                             + excludes, cwd=root, capture_output=True)
+    finally:
+        os.unlink(patterns)
+    if run.returncode not in (0, 1):  # 1: no match
+        raise SystemExit('test_audit: git grep failed: %s' % run.stderr.decode('utf-8', 'replace').strip())
+    out = {}
+    for line in run.stdout.decode('utf-8').splitlines():
+        name, _, match = line.partition('\0')
+        if match not in olds:
+            raise SystemExit('test_audit: git grep matched %r, which is no old name' % match)
+        out.setdefault(name, set()).add(olds[match])
+    return out
 
 
 def report(root):

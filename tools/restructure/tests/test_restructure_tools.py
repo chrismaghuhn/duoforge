@@ -153,6 +153,18 @@ class RenameTable(unittest.TestCase):
             (root / 'tools' / 'x.py').write_text('NAME = "duoforge.moves.probe"  # pool_g9990 is another name\n', encoding='utf-8')
             self.assertEqual(test_audit.check(root), [])
 
+    def test_an_old_name_counts_only_as_a_word(self):
+        # the old names as words (a dot, a slash, a quote or the line's end around them), not inside a longer name; a binary
+        # file is not read; the old file's name maps to its row's path
+        with tempfile.TemporaryDirectory() as tmp:
+            files = {'tests/moves/test_probe.c': '',
+                     'a.md': 'see duoforge.state.pool_g999.\n', 'b.md': 'x_test_pool_g999.c and duoforge.state.pool_g9990\n',
+                     'c.md': 'built from tests/moves/test_pool_g999.c\n', 'd.bin': 'duoforge.state.pool_g999\0\n'}
+            root = self.tree(tmp, 'done', files, cmake=self.DONE)
+            self.assertEqual(test_audit.check(root), [
+                'a.md: still names duoforge.state.pool_g999 (renamed, see tests/renames.tsv)',
+                'c.md: still names moves/test_pool_g999.c (renamed, see tests/renames.tsv)'])
+
     def test_done_row_with_the_old_file_left_is_refused(self):
         with tempfile.TemporaryDirectory() as tmp:
             root = self.tree(tmp, 'done', {'tests/moves/test_probe.c': '', 'tests/moves/test_pool_g999.c': ''}, cmake=self.DONE)
