@@ -3696,8 +3696,9 @@ static duoforge_status dfi_run_aurora_veil(dfi_run *r, uint32_t user)
  * the user's own never does (target !== source); Soundproof (:4436-4452, a sound move) is unmarked, the other marked
  * abilities with an onTryHit read a type that Perish Song (Normal) is not (Flash Fire, Lightning Rod) or a priority
  * above 0 (Armor Tail; Psychic Terrain: refused below), Protect and Wide Guard let a move without the protect flag
- * through (checkMoveBypassesProtect, sim/battle.ts:1300-1309), and no semi-invulnerable move is marked, so the
- * Invulnerability event misses nothing. A Pokemon that gets the volatile shows nothing now (-start perish3 is [silent];
+ * through (checkMoveBypassesProtect, sim/battle.ts:1300-1309). The Invulnerability event comes first (:13246): a
+ * semi-invulnerable Pokemon (Phantom Force's charge, dfi_invulnerable_to: not against No Guard) is -miss|user|target, gets
+ * nothing and counts as a result (issue 553). A Pokemon that gets the volatile shows nothing now (-start perish3 is [silent];
  * the first count is the residual's); if at least one did, -fieldactivate|move: Perish Song follows. A move that did
  * nothing (every active Pokemon has it already) fails with -fail and [still] (moveHit, sim/battle-actions.ts:1302-1308).
  * The hit loop's Update does not run, as for the other field moves. */
@@ -3712,6 +3713,12 @@ static duoforge_status dfi_run_perish_song(dfi_run *r, uint32_t user, const dfi_
     for (uint32_t flat = 0u; flat < DFI_POSITIONS; ++flat) {
         const dfi_member *t = dfi_at(b, flat);
         if (t == NULL || t->hp == 0u) {
+            continue;
+        }
+        if (dfi_invulnerable_to(r, user, flat, DFI_MOVE_PERISHSONG)) {
+            const duoforge_event miss = dfi_ev(DUOFORGE_EVENT_MISS, user, DUOFORGE_CAUSE_NONE, 0u, flat);
+            dfi_emit(r, &miss); /* -miss|user|target, no [miss] on the move line (onHitField's own add) */
+            result = true;
             continue;
         }
         if (flat != user && dfi_ability(b, t, DFI_ABILITY_GOODASGOLD)) {
