@@ -1,0 +1,66 @@
+{
+  "name": "fz550_curse_follow_me",
+  "purpose": "Tauros, not a Ghost, uses Curse while Indeedee's Follow Me is up; Curse's onModifyMove makes it target the user before RedirectTarget (data/moves.ts:3276-3281); on main the engine showed it redirected to Indeedee (issue 550). A battle of the differential fuzzing of issue 396 (free random sets, fz_101_7), whole. The choices and the seed are those of the campaign; the trace is recorded with the pinned Showdown (b2cb775).",
+  "data": "pool",
+  "format": "gen9championsvgc2026regmc",
+  "seed": "sodium,3fa585bf6cbfc616e2295d5493244f1a54f7ae15c4102527ef49f733c4086dd6",
+  "teams": [
+    "torkoal (M) @ ejectbutton\nAbility: shellarmor\nLevel: 50\nEVs: 6 HP / 1 Atk / 4 Def / 5 SpA / 2 SpD / 5 Spe\nRash Nature\n- lavaplume\n- substitute\n- flareblitz\n- earthpower\n\narchaludon (M) @ terrainextender\nAbility: stalwart\nLevel: 50\nEVs: 12 HP / 12 Atk / 11 Def / 9 SpA / 11 SpD / 11 Spe\nBrave Nature\n- roar\n- lightscreen\n- hardpress\n- foulplay\n\nmamoswine (M) @ manectite\nAbility: thickfat\nLevel: 50\nEVs: 7 HP / 6 Atk / 4 Def / 3 SpA / 10 SpD / 5 Spe\nNaive Nature\n- throatchop\n- endeavor\n- stoneedge\n- sandtomb\n\nglaceon (M) @ garchompitez\nAbility: snowcloak\nLevel: 50\nEVs: 8 HP / 11 Atk / 10 Def / 14 SpA / 12 SpD / 11 Spe\nHardy Nature\n- batonpass\n- icywind\n- blizzard\n- mudslap\n\nclawitzer (M)\nAbility: megalauncher\nLevel: 50\nEVs: 10 HP / 8 Atk / 11 Def / 14 SpA / 9 SpD / 14 Spe\nModest Nature\n- muddywater\n- sludgewave\n- gigaimpact\n- chillingwater\n\nindeedeef (F) @ blazikenite\nAbility: psychicsurge\nLevel: 50\nEVs: 11 HP / 11 Atk / 8 Def / 9 SpA / 12 SpD / 15 Spe\nQuirky Nature\n- sing\n- zenheadbutt\n- reflect\n- followme",
+    "charizard (F) @ aggronite\nAbility: solarpower\nLevel: 50\nEVs: 16 HP / 10 Atk / 10 Def / 11 SpA / 8 SpD / 11 Spe\nCalm Nature\n- flamethrower\n- beatup\n- megakick\n- swordsdance\n\nbastiodon (M) @ feraligite\nAbility: soundproof\nLevel: 50\nEVs: 11 HP / 12 Atk / 10 Def / 8 SpA / 14 SpD / 11 Spe\nAdamant Nature\n- roar\n- hardpress\n- stompingtantrum\n- swagger\n\nspiritomb (F) @ mawilite\nAbility: pressure\nLevel: 50\nEVs: 11 HP / 10 Atk / 14 Def / 7 SpA / 9 SpD / 15 Spe\nQuiet Nature\n- lashout\n- phantomforce\n- hyperbeam\n- icywind\n\nmeowsticf (F) @ meowsticite\nAbility: competitive\nLevel: 50\nEVs: 4 HP / 8 Atk / 2 Def / 5 SpA / 8 SpD / 7 Spe\nSassy Nature\n- darkpulse\n- charm\n- raindance\n- zenheadbutt\n\ntaurospaldeacombat (M) @ glalitite\nAbility: intimidate\nLevel: 50\nEVs: 5 HP / 1 Atk / 3 Def / 2 SpA / 1 SpD / 1 Spe\nRelaxed Nature\n- closecombat\n- curse\n- rockslide\n- assurance\n\nfroslass (F) @ beedrillite\nAbility: snowcloak\nLevel: 50\nEVs: 11 HP / 6 Atk / 16 Def / 10 SpA / 17 SpD / 6 Spe\nBrave Nature\n- thunder\n- icepunch\n- nastyplot\n- snowscape"
+  ],
+  "choices": [
+    {
+      "p1": "team 5631",
+      "p2": "team 4352"
+    },
+    {
+      "p1": "move 4 1, move 1 2",
+      "p2": "move 2 2, move 1 -1"
+    },
+    {
+      "p1": "move 1, move 4",
+      "p2": "move 3, move 1 2"
+    },
+    {
+      "p1": "move 4 1, move 4",
+      "p2": "move 2 2, move 3 -1"
+    },
+    {
+      "p2": "switch 3, pass"
+    },
+    {
+      "p1": "move 4 -2, move 4",
+      "p2": "move 2, move 1"
+    },
+    {
+      "p1": "move 1, move 4",
+      "p2": "move 1 1, move 3 2"
+    },
+    {
+      "p1": "pass, switch 4"
+    },
+    {
+      "p1": "move 1, move 3 2",
+      "p2": "move 3, move 1"
+    },
+    {
+      "p2": "pass, switch 4"
+    },
+    {
+      "p1": "move 1, move 2",
+      "p2": "pass, move 2 -1"
+    },
+    {
+      "p1": "move 3 2, move 2",
+      "p2": "pass, move 3 -1"
+    },
+    {
+      "p1": "move 1, switch 3",
+      "p2": "pass, move 1 2"
+    },
+    {
+      "p1": "move 4 1, move 1",
+      "p2": "pass, move 2 2"
+    }
+  ]
+}
