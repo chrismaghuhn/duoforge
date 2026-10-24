@@ -23,3 +23,12 @@
   factor dyadic but one 1.5); the burn halving is at `turn.c:9729-9734`, `dfi_will_move`'s declaration at `turn.c:1136-1137`.
   The residual runner's drawn speed ties (#661) order the burn ticks, which the halving does not touch; no refusal of this
   entry is about a residual tie.
+  Checked on the merged head 4e3cbddd under the machine lock after a clean Release build (`DUOFORGE_PYTHON` and
+  `DUOFORGE_LEARN_PYTHON` $HOME/df-learn, `DUOFORGE_PS_REFERENCE_DIR`, `JAX_PLATFORMS=cpu`): every CTest but bench, cloud and
+  `duoforge.python.live`, 1664 (101 python-label tests ran, none skipped; `lint.test_renames` and `tools.restructure` red on
+  f8e6f1be, the old terrain test file name in this file, green after the fix), `duoforge.python.live` alone (1 of 1),
+  `capture_battle_pins.py --check` (1255 battles, 1182 live), and the nine covering battles PASS 9 in `diff_driver.py replay`
+  before and after the mutants (runner sha256 698f70f1... both times). The mutants M1-M19 again, one lock job on a copy of the
+  head, green baseline, the copy restored and rebuilt green after the last: the same kills as above (M4 by
+  `conformance_pool_data` alone, M17 by `pool_tables`, the white-box test's facts and `gen_closure.py --pool --check`, M18 by
+  `FluffyChain`, M19 by `gen_closure.py --pool --check`), M10 again uncaught.
