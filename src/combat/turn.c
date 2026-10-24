@@ -9388,8 +9388,10 @@ static duoforge_status dfi_leech_drain(dfi_run *r, uint32_t holder)
     if (lost == 0u || t->hp == 0u) {
         return DUOFORGE_OK;
     }
-    /* Pokemon.heal (sim/pokemon.ts:1640-1652): nothing at full HP, else the amount, capped at the max; the line is silent */
-    if (t->hp >= t->hp_max) {
+    /* Battle.heal runs TryHeal first (sim/battle.ts:2271-2272): Heal Block's onTryHeal returns false (data/moves.ts:8324-8333),
+     * so a heal-blocked target gains nothing, silently (issue 553). Pokemon.heal (sim/pokemon.ts:1640-1652): nothing at full
+     * HP, else the amount, capped at the max; the line is silent */
+    if (t->hp >= t->hp_max || dfi_heal_blocked(b, target)) {
         return DUOFORGE_OK;
     }
     const uint32_t hp = (uint32_t)t->hp + lost;
