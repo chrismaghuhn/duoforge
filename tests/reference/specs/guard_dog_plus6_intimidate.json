@@ -1,0 +1,28 @@
+{
+  "name": "guard_dog_plus6_intimidate",
+  "purpose": "Guard Dog at +6 Attack (issue 684, decision 0015 entry 5el): Gallade (M) swaps abilities with its ally Mabosstiff (M, Guard Dog) by Skill Swap, then raises its Attack to +6 with three Swords Dances; Gyarados's Intimidate at its entry meets Guard Dog, which deletes the drop and calls this.boost({atk: 1}, target, target, null, false, true) (data/abilities.ts:1727-1744): the change is capped to 0, and an ability's isSelf boost of 0 prints -boost|holder|atk|0 with no -ability line (sim/battle.ts boost); Mabosstiff, now with Steadfast, loses its Attack.",
+  "data": "pool",
+  "format": "gen9championsvgc2026regmc",
+  "seed": "sodium,00000000000000000000000000000000000000000000000000000000000068a4",
+  "teams": [
+    "Gallade (M)\nAbility: Steadfast\nLevel: 50\nEVs: 32 HP / 32 Atk / 2 Spe\nAdamant Nature\n- Skill Swap\n- Swords Dance\n- Protect\n- Psycho Cut\n\nMabosstiff (M)\nAbility: Guard Dog\nLevel: 50\nEVs: 32 HP / 32 Atk / 2 SpD\nAdamant Nature\n- Protect\n- Helping Hand\n- Crunch\n\nGengar (F)\nAbility: Cursed Body\nLevel: 50\nEVs: 32 HP / 32 SpA / 2 Spe\nTimid Nature\n- Shadow Ball\n- Dark Pulse\n- Focus Blast\n\nRillaboom (M)\nAbility: Grassy Surge\nLevel: 50\nEVs: 32 HP / 32 Atk / 2 Def\nAdamant Nature\n- Fake Out\n- Earthquake\n- Drum Beating\n\nPelipper (M)\nAbility: Drizzle\nLevel: 50\nEVs: 32 HP / 32 SpA / 2 Spe\nBold Nature\n- Hurricane\n- Helping Hand\n- Hydro Pump\n\nGarchomp (M)\nAbility: Rough Skin\nLevel: 50\nEVs: 2 HP / 32 Atk / 32 Spe\nJolly Nature\n- Earthquake\n- Dragon Claw\n- Protect",
+    "Chimecho (F)\nAbility: Levitate\nLevel: 50\nEVs: 32 HP / 32 SpA / 2 Spe\nCalm Nature\n- Calm Mind\n- Dazzling Gleam\n- Protect\n\nEspeon (F)\nAbility: Synchronize\nLevel: 50\nEVs: 32 HP / 32 SpA / 2 Spe\nTimid Nature\n- Calm Mind\n- Dazzling Gleam\n- Helping Hand\n\nGyarados (M)\nAbility: Intimidate\nLevel: 50\nEVs: 32 HP / 32 Atk / 2 Spe\nAdamant Nature\n- Waterfall\n- Dragon Dance\n- Protect\n\nSpiritomb (M)\nAbility: Pressure\nLevel: 50\nEVs: 32 HP / 32 Def / 2 Spe\nCalm Nature\n- Protect\n- Dark Pulse\n- Foul Play\n\nKingambit (M)\nAbility: Pressure\nLevel: 50\nEVs: 32 HP / 32 Atk / 2 Spe\nAdamant Nature\n- Kowtow Cleave\n- Iron Head\n- Foul Play\n\nCeruledge (M)\nAbility: Flash Fire\nLevel: 50\nEVs: 32 HP / 32 Atk / 2 Spe\nAdamant Nature\n- Close Combat\n- Bitter Blade\n- Bulk Up"
+  ],
+  "plan": {
+    "p1": [
+      "move 1 -2, move 2",
+      "move 2, move 2",
+      "move 2, move 2",
+      "move 2, move 2",
+      "move 3, move 2"
+    ],
+    "p2": [
+      "move 1, move 1",
+      "move 1, move 1",
+      "move 1, move 1",
+      "move 1, move 1",
+      "switch 3, move 1"
+    ],
+    "max_steps": 6
+  }
+}
