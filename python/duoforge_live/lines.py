@@ -526,6 +526,8 @@ def check(line, view):
             return "fold"  # an announcement of the holder's own ability (Intimidate, Pressure, ...)
         return _not_its_own(kind, effect, args[0], view)
     if kind == "-enditem":
+        if "[weaken]" in attrs and not _froms(attrs):
+            return "fold"  # a resist berry's second line: its [eat] line took the berry (Symbiosis may have given a new item since)
         froms = _froms(attrs)
         if any(f in _ITEM_CHANGE_FROM or f.startswith("move: ") for f in froms):
             if len(froms) == 1 and _item_change_played(froms[0], attrs, view):
