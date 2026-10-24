@@ -995,6 +995,15 @@ const dfi_support_manifest dfi_support = {
             [DFI_ITEM_SOFTSAND] = 1u,
             [DFI_ITEM_LUMBERRY] = 1u,   /* step G47: a status or a confusion is cured by the berry (data/items.ts:3537-3560) */
             [DFI_ITEM_MENTALHERB] = 1u, /* step G47: the four volatiles (data/items.ts:3889-3926) */
+            /* Batch I2 (decision 0015 entry 5eg): the cure berries (the CURE_BERRY family, eaten at Update for one condition) and Oran
+             * Berry (HEAL_BERRY, Sitrus Berry's rule with 10 HP); Leppa Berry is not marked (an HS decision: its PP line and fold). */
+            [DFI_ITEM_CHERIBERRY] = 1u,
+            [DFI_ITEM_CHESTOBERRY] = 1u,
+            [DFI_ITEM_PECHABERRY] = 1u,
+            [DFI_ITEM_RAWSTBERRY] = 1u,
+            [DFI_ITEM_ASPEARBERRY] = 1u,
+            [DFI_ITEM_PERSIMBERRY] = 1u,
+            [DFI_ITEM_ORANBERRY] = 1u,
             [DFI_ITEM_SPELLTAG] = 1u,
             [DFI_ITEM_TWISTEDSPOON] = 1u,
             [DFI_ITEM_BABIRIBERRY] = 1u,

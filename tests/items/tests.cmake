@@ -11,3 +11,5 @@ duoforge_add_test(NAME duoforge.items.duration_items SOURCES items/test_duration
 duoforge_add_test(NAME duoforge.items.power_and_accuracy_items SOURCES items/test_power_and_accuracy_items.c WHITEBOX TIMEOUT 60 TIER quick AREA items)
 # Step G49 (decision 0015 entry 5ao): Bright Powder: the two orders of its priority -2 group with Wide Lens, and the two refusals.
 duoforge_add_test(NAME duoforge.items.bright_powder SOURCES items/test_bright_powder.c WHITEBOX TIMEOUT 60 TIER quick AREA items)
+# 5eg (I2): The cure berries, Oran Berry and the isBerry column. Scaffolded by tools/new_mechanic.py.
+duoforge_add_test(NAME duoforge.items.berry_family SOURCES items/test_berry_family.c WHITEBOX TIMEOUT 60 TIER quick AREA items)

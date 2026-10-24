@@ -83,6 +83,34 @@ static uint32_t held(const dfi_member *m)
     return m == NULL || m->item_consumed != 0u ? 0u : m->item;
 }
 
+/* Batch I2 (decision 0015 entry 5eg): the cure and heal berries, written down from the pinned handlers (data/items.ts: the
+ * status of each cure berry's onUpdate test, Persim's confusion, Oran's heal(10)); duoforge.items.berry_family checks what
+ * they do. */
+static const struct {
+    uint32_t item;
+    uint32_t family;
+    uint32_t param;
+} I2_BERRIES[] = {
+    {DFI_ITEM_ASPEARBERRY, DFI_ITEM_FAMILY_CURE_BERRY, DFI_FAMILY_CURE_FRZ},
+    {DFI_ITEM_CHERIBERRY, DFI_ITEM_FAMILY_CURE_BERRY, DFI_FAMILY_CURE_PAR},
+    {DFI_ITEM_CHESTOBERRY, DFI_ITEM_FAMILY_CURE_BERRY, DFI_FAMILY_CURE_SLP},
+    {DFI_ITEM_PECHABERRY, DFI_ITEM_FAMILY_CURE_BERRY, DFI_FAMILY_CURE_PSN},
+    {DFI_ITEM_PERSIMBERRY, DFI_ITEM_FAMILY_CURE_BERRY, DFI_FAMILY_CURE_CONFUSION},
+    {DFI_ITEM_RAWSTBERRY, DFI_ITEM_FAMILY_CURE_BERRY, DFI_FAMILY_CURE_BRN},
+    {DFI_ITEM_ORANBERRY, DFI_ITEM_FAMILY_HEAL_BERRY, 10u},
+};
+#define N_I2 (sizeof I2_BERRIES / sizeof I2_BERRIES[0])
+
+static bool i2_member(uint32_t id)
+{
+    for (size_t k = 0u; k < N_I2; ++k) {
+        if (I2_BERRIES[k].item == id) {
+            return true;
+        }
+    }
+    return false;
+}
+
 int main(void)
 {
     df_test t;
@@ -94,8 +122,12 @@ int main(void)
     for (uint32_t id = 0u; id < DFI_POOL_ITEM_COUNT; ++id) {
         const bool booster = type_in(BOOSTERS, N_BOOSTERS, id) != DFI_CLOSURE_NONE;
         const bool berry = type_in(BERRIES, N_BERRIES, id) != DFI_CLOSURE_NONE;
-        DF_CHECK(&t, !(booster && berry));
-        DF_CHECK_EQ_U64(&t, dfi_pool_item_family[id].family != DFI_ITEM_FAMILY_NONE, booster || berry);
+        DF_CHECK(&t, !(booster && berry) && !((booster || berry) && i2_member(id)));
+        DF_CHECK_EQ_U64(&t, dfi_pool_item_family[id].family != DFI_ITEM_FAMILY_NONE, booster || berry || i2_member(id));
+    }
+    for (size_t k = 0u; k < N_I2; ++k) {
+        DF_CHECK_EQ_U64(&t, dfi_pool_item_family[I2_BERRIES[k].item].family, I2_BERRIES[k].family);
+        DF_CHECK_EQ_U64(&t, dfi_pool_item_family[I2_BERRIES[k].item].type, I2_BERRIES[k].param);
     }
 
     /* The modifiers: the pinned handlers' 4915/4096 and 0.5. */

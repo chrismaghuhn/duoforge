@@ -1849,7 +1849,7 @@ const dfi_pool_item_data dfi_pool_items[DFI_POOL_ITEM_COUNT] = {
     {135u, 136u},
     /* Ampharosite -- data/items.ts:250-261, data/mods/champions/items.ts:54-57 */
     {90u, 91u},
-    /* Aspear Berry -- data/items.ts:292-312  [unmodelled: callback onEat; callback onUpdate] */
+    /* Aspear Berry -- data/items.ts:292-312 */
     {DFI_FORME_NONE, DFI_FORME_NONE},
     /* Audinite -- data/items.ts:334-345, data/mods/champions/items.ts:66-69 */
     {198u, 199u},
@@ -1877,11 +1877,11 @@ const dfi_pool_item_data dfi_pool_items[DFI_POOL_ITEM_COUNT] = {
     {216u, 217u},
     /* Charizardite X -- data/items.ts:788-799, data/mods/champions/items.ts:138-141 */
     {13u, 30u},
-    /* Cheri Berry -- data/items.ts:836-856  [unmodelled: callback onEat; callback onUpdate] */
+    /* Cheri Berry -- data/items.ts:836-856 */
     {DFI_FORME_NONE, DFI_FORME_NONE},
     /* Chesnaughtite -- data/items.ts:865-876, data/mods/champions/items.ts:146-149 */
     {225u, 226u},
-    /* Chesto Berry -- data/items.ts:877-897  [unmodelled: callback onEat; callback onUpdate] */
+    /* Chesto Berry -- data/items.ts:877-897 */
     {DFI_FORME_NONE, DFI_FORME_NONE},
     /* Chimechite -- data/items.ts:938-949, data/mods/champions/items.ts:150-153 */
     {140u, 141u},
@@ -1991,11 +1991,11 @@ const dfi_pool_item_data dfi_pool_items[DFI_POOL_ITEM_COUNT] = {
     {DFI_FORME_NONE, DFI_FORME_NONE},
     /* Normal Gem -- data/items.ts:4324-4336  [unmodelled: callback onSourceTryPrimaryHit] */
     {DFI_FORME_NONE, DFI_FORME_NONE},
-    /* Oran Berry -- data/items.ts:4397-4418  [unmodelled: callback onEat; callback onTryEatItem; callback onUpdate; read by id in data/abilities.ts; read by id in sim/pokemon.ts] */
+    /* Oran Berry -- data/items.ts:4397-4418 */
     {DFI_FORME_NONE, DFI_FORME_NONE},
-    /* Pecha Berry -- data/items.ts:4497-4517  [unmodelled: callback onEat; callback onUpdate] */
+    /* Pecha Berry -- data/items.ts:4497-4517 */
     {DFI_FORME_NONE, DFI_FORME_NONE},
-    /* Persim Berry -- data/items.ts:4518-4536  [unmodelled: callback onEat; callback onUpdate] */
+    /* Persim Berry -- data/items.ts:4518-4536 */
     {DFI_FORME_NONE, DFI_FORME_NONE},
     /* Pidgeotite -- data/items.ts:4557-4568, data/mods/champions/items.ts:678-681 */
     {35u, 36u},
@@ -2009,7 +2009,7 @@ const dfi_pool_item_data dfi_pool_items[DFI_POOL_ITEM_COUNT] = {
     {DFI_FORME_NONE, DFI_FORME_NONE},
     /* Raichunite X -- data/items.ts:5035-5046, data/mods/champions/items.ts:762-765 */
     {5u, 39u},
-    /* Rawst Berry -- data/items.ts:5068-5088  [unmodelled: callback onEat; callback onUpdate] */
+    /* Rawst Berry -- data/items.ts:5068-5088 */
     {DFI_FORME_NONE, DFI_FORME_NONE},
     /* Red Card -- data/items.ts:5146-5167 */
     {DFI_FORME_NONE, DFI_FORME_NONE},
@@ -2324,7 +2324,7 @@ const dfi_item_family dfi_pool_item_family[DFI_POOL_ITEM_COUNT] = {
     [DFI_ITEM_ALAKAZITE] = {DFI_ITEM_FAMILY_NONE, DFI_FAMILY_PARAM_NONE},
     [DFI_ITEM_ALTARIANITE] = {DFI_ITEM_FAMILY_NONE, DFI_FAMILY_PARAM_NONE},
     [DFI_ITEM_AMPHAROSITE] = {DFI_ITEM_FAMILY_NONE, DFI_FAMILY_PARAM_NONE},
-    [DFI_ITEM_ASPEARBERRY] = {DFI_ITEM_FAMILY_NONE, DFI_FAMILY_PARAM_NONE},
+    [DFI_ITEM_ASPEARBERRY] = {DFI_ITEM_FAMILY_CURE_BERRY, DFI_FAMILY_CURE_FRZ},
     [DFI_ITEM_AUDINITE] = {DFI_ITEM_FAMILY_NONE, DFI_FAMILY_PARAM_NONE},
     [DFI_ITEM_BANETTITE] = {DFI_ITEM_FAMILY_NONE, DFI_FAMILY_PARAM_NONE},
     [DFI_ITEM_BARBARACITE] = {DFI_ITEM_FAMILY_NONE, DFI_FAMILY_PARAM_NONE},
@@ -2338,9 +2338,9 @@ const dfi_item_family dfi_pool_item_family[DFI_POOL_ITEM_COUNT] = {
     [DFI_ITEM_CAMERUPTITE] = {DFI_ITEM_FAMILY_NONE, DFI_FAMILY_PARAM_NONE},
     [DFI_ITEM_CHANDELURITE] = {DFI_ITEM_FAMILY_NONE, DFI_FAMILY_PARAM_NONE},
     [DFI_ITEM_CHARIZARDITEX] = {DFI_ITEM_FAMILY_NONE, DFI_FAMILY_PARAM_NONE},
-    [DFI_ITEM_CHERIBERRY] = {DFI_ITEM_FAMILY_NONE, DFI_FAMILY_PARAM_NONE},
+    [DFI_ITEM_CHERIBERRY] = {DFI_ITEM_FAMILY_CURE_BERRY, DFI_FAMILY_CURE_PAR},
     [DFI_ITEM_CHESNAUGHTITE] = {DFI_ITEM_FAMILY_NONE, DFI_FAMILY_PARAM_NONE},
-    [DFI_ITEM_CHESTOBERRY] = {DFI_ITEM_FAMILY_NONE, DFI_FAMILY_PARAM_NONE},
+    [DFI_ITEM_CHESTOBERRY] = {DFI_ITEM_FAMILY_CURE_BERRY, DFI_FAMILY_CURE_SLP},
     [DFI_ITEM_CHIMECHITE] = {DFI_ITEM_FAMILY_NONE, DFI_FAMILY_PARAM_NONE},
     [DFI_ITEM_CLEFABLITE] = {DFI_ITEM_FAMILY_NONE, DFI_FAMILY_PARAM_NONE},
     [DFI_ITEM_CRABOMINITE] = {DFI_ITEM_FAMILY_NONE, DFI_FAMILY_PARAM_NONE},
@@ -2395,16 +2395,16 @@ const dfi_item_family dfi_pool_item_family[DFI_POOL_ITEM_COUNT] = {
     [DFI_ITEM_MISTYSEED] = {DFI_ITEM_FAMILY_NONE, DFI_FAMILY_PARAM_NONE},
     [DFI_ITEM_MUSCLEBAND] = {DFI_ITEM_FAMILY_NONE, DFI_FAMILY_PARAM_NONE},
     [DFI_ITEM_NORMALGEM] = {DFI_ITEM_FAMILY_NONE, DFI_FAMILY_PARAM_NONE},
-    [DFI_ITEM_ORANBERRY] = {DFI_ITEM_FAMILY_NONE, DFI_FAMILY_PARAM_NONE},
-    [DFI_ITEM_PECHABERRY] = {DFI_ITEM_FAMILY_NONE, DFI_FAMILY_PARAM_NONE},
-    [DFI_ITEM_PERSIMBERRY] = {DFI_ITEM_FAMILY_NONE, DFI_FAMILY_PARAM_NONE},
+    [DFI_ITEM_ORANBERRY] = {DFI_ITEM_FAMILY_HEAL_BERRY, 10u},
+    [DFI_ITEM_PECHABERRY] = {DFI_ITEM_FAMILY_CURE_BERRY, DFI_FAMILY_CURE_PSN},
+    [DFI_ITEM_PERSIMBERRY] = {DFI_ITEM_FAMILY_CURE_BERRY, DFI_FAMILY_CURE_CONFUSION},
     [DFI_ITEM_PIDGEOTITE] = {DFI_ITEM_FAMILY_NONE, DFI_FAMILY_PARAM_NONE},
     [DFI_ITEM_PINSIRITE] = {DFI_ITEM_FAMILY_NONE, DFI_FAMILY_PARAM_NONE},
     [DFI_ITEM_PSYCHICSEED] = {DFI_ITEM_FAMILY_NONE, DFI_FAMILY_PARAM_NONE},
     [DFI_ITEM_PYROARITE] = {DFI_ITEM_FAMILY_NONE, DFI_FAMILY_PARAM_NONE},
     [DFI_ITEM_QUICKCLAW] = {DFI_ITEM_FAMILY_NONE, DFI_FAMILY_PARAM_NONE},
     [DFI_ITEM_RAICHUNITEX] = {DFI_ITEM_FAMILY_NONE, DFI_FAMILY_PARAM_NONE},
-    [DFI_ITEM_RAWSTBERRY] = {DFI_ITEM_FAMILY_NONE, DFI_FAMILY_PARAM_NONE},
+    [DFI_ITEM_RAWSTBERRY] = {DFI_ITEM_FAMILY_CURE_BERRY, DFI_FAMILY_CURE_BRN},
     [DFI_ITEM_REDCARD] = {DFI_ITEM_FAMILY_NONE, DFI_FAMILY_PARAM_NONE},
     [DFI_ITEM_SABLENITE] = {DFI_ITEM_FAMILY_NONE, DFI_FAMILY_PARAM_NONE},
     [DFI_ITEM_SCEPTILITE] = {DFI_ITEM_FAMILY_NONE, DFI_FAMILY_PARAM_NONE},
@@ -2712,7 +2712,7 @@ const uint8_t dfi_pool_item_handler[DFI_POOL_ITEM_COUNT] = {
     [DFI_ITEM_ALAKAZITE] = DFI_HANDLER_NONE,
     [DFI_ITEM_ALTARIANITE] = DFI_HANDLER_NONE,
     [DFI_ITEM_AMPHAROSITE] = DFI_HANDLER_NONE,
-    [DFI_ITEM_ASPEARBERRY] = DFI_HANDLER_UNMODELED,
+    [DFI_ITEM_ASPEARBERRY] = DFI_HANDLER_NONE,
     [DFI_ITEM_AUDINITE] = DFI_HANDLER_NONE,
     [DFI_ITEM_BANETTITE] = DFI_HANDLER_NONE,
     [DFI_ITEM_BARBARACITE] = DFI_HANDLER_NONE,
@@ -2726,9 +2726,9 @@ const uint8_t dfi_pool_item_handler[DFI_POOL_ITEM_COUNT] = {
     [DFI_ITEM_CAMERUPTITE] = DFI_HANDLER_NONE,
     [DFI_ITEM_CHANDELURITE] = DFI_HANDLER_NONE,
     [DFI_ITEM_CHARIZARDITEX] = DFI_HANDLER_NONE,
-    [DFI_ITEM_CHERIBERRY] = DFI_HANDLER_UNMODELED,
+    [DFI_ITEM_CHERIBERRY] = DFI_HANDLER_NONE,
     [DFI_ITEM_CHESNAUGHTITE] = DFI_HANDLER_NONE,
-    [DFI_ITEM_CHESTOBERRY] = DFI_HANDLER_UNMODELED,
+    [DFI_ITEM_CHESTOBERRY] = DFI_HANDLER_NONE,
     [DFI_ITEM_CHIMECHITE] = DFI_HANDLER_NONE,
     [DFI_ITEM_CLEFABLITE] = DFI_HANDLER_NONE,
     [DFI_ITEM_CRABOMINITE] = DFI_HANDLER_NONE,
@@ -2783,16 +2783,16 @@ const uint8_t dfi_pool_item_handler[DFI_POOL_ITEM_COUNT] = {
     [DFI_ITEM_MISTYSEED] = DFI_HANDLER_NONE,
     [DFI_ITEM_MUSCLEBAND] = DFI_HANDLER_NONE,
     [DFI_ITEM_NORMALGEM] = DFI_HANDLER_UNMODELED,
-    [DFI_ITEM_ORANBERRY] = DFI_HANDLER_UNMODELED,
-    [DFI_ITEM_PECHABERRY] = DFI_HANDLER_UNMODELED,
-    [DFI_ITEM_PERSIMBERRY] = DFI_HANDLER_UNMODELED,
+    [DFI_ITEM_ORANBERRY] = DFI_HANDLER_NONE,
+    [DFI_ITEM_PECHABERRY] = DFI_HANDLER_NONE,
+    [DFI_ITEM_PERSIMBERRY] = DFI_HANDLER_NONE,
     [DFI_ITEM_PIDGEOTITE] = DFI_HANDLER_NONE,
     [DFI_ITEM_PINSIRITE] = DFI_HANDLER_NONE,
     [DFI_ITEM_PSYCHICSEED] = DFI_HANDLER_NONE,
     [DFI_ITEM_PYROARITE] = DFI_HANDLER_NONE,
     [DFI_ITEM_QUICKCLAW] = DFI_HANDLER_UNMODELED,
     [DFI_ITEM_RAICHUNITEX] = DFI_HANDLER_NONE,
-    [DFI_ITEM_RAWSTBERRY] = DFI_HANDLER_UNMODELED,
+    [DFI_ITEM_RAWSTBERRY] = DFI_HANDLER_NONE,
     [DFI_ITEM_REDCARD] = DFI_HANDLER_NONE,
     [DFI_ITEM_SABLENITE] = DFI_HANDLER_NONE,
     [DFI_ITEM_SCEPTILITE] = DFI_HANDLER_NONE,
@@ -5502,6 +5502,38 @@ const uint8_t dfi_pool_move_flags3[DFI_POOL_MOVE_COUNT] = {
     [DFI_MOVE_YAWN] = 1u, /* Yawn */
 };
 
+/* The isBerry column (batch I2, decision 0015 entry 5eg): the berries of data/items.ts. */
+const uint8_t dfi_pool_item_berry[DFI_POOL_ITEM_COUNT] = {
+    [DFI_ITEM_SITRUSBERRY] = 1u,
+    [DFI_ITEM_CHOPLEBERRY] = 1u,
+    [DFI_ITEM_BABIRIBERRY] = 1u,
+    [DFI_ITEM_CHARTIBERRY] = 1u,
+    [DFI_ITEM_CHILANBERRY] = 1u,
+    [DFI_ITEM_COBABERRY] = 1u,
+    [DFI_ITEM_COLBURBERRY] = 1u,
+    [DFI_ITEM_HABANBERRY] = 1u,
+    [DFI_ITEM_KASIBBERRY] = 1u,
+    [DFI_ITEM_KEBIABERRY] = 1u,
+    [DFI_ITEM_OCCABERRY] = 1u,
+    [DFI_ITEM_PASSHOBERRY] = 1u,
+    [DFI_ITEM_PAYAPABERRY] = 1u,
+    [DFI_ITEM_RINDOBERRY] = 1u,
+    [DFI_ITEM_ROSELIBERRY] = 1u,
+    [DFI_ITEM_SHUCABERRY] = 1u,
+    [DFI_ITEM_TANGABERRY] = 1u,
+    [DFI_ITEM_WACANBERRY] = 1u,
+    [DFI_ITEM_YACHEBERRY] = 1u,
+    [DFI_ITEM_ASPEARBERRY] = 1u,
+    [DFI_ITEM_CHERIBERRY] = 1u,
+    [DFI_ITEM_CHESTOBERRY] = 1u,
+    [DFI_ITEM_LEPPABERRY] = 1u,
+    [DFI_ITEM_LUMBERRY] = 1u,
+    [DFI_ITEM_ORANBERRY] = 1u,
+    [DFI_ITEM_PECHABERRY] = 1u,
+    [DFI_ITEM_PERSIMBERRY] = 1u,
+    [DFI_ITEM_RAWSTBERRY] = 1u,
+};
+
 /* Cosmetic formes: a name for the row of the base forme (decision 0015 section 4.2). */
 const dfi_pool_alias dfi_pool_forme_aliases[DFI_POOL_ALIAS_COUNT] = {
     {"vivillonicysnow", DFI_FORME_VIVILLON},
@@ -6949,21 +6981,14 @@ const char *const dfi_pool_move_unmodeled[DFI_POOL_MOVE_COUNT] = {
 };
 
 const char *const dfi_pool_item_unmodeled[DFI_POOL_ITEM_COUNT] = {
-    [DFI_ITEM_ASPEARBERRY] = "callback onEat; callback onUpdate",
     [DFI_ITEM_BIGROOT] = "callback onTryHeal; callback onTryHealPriority",
-    [DFI_ITEM_CHERIBERRY] = "callback onEat; callback onUpdate",
-    [DFI_ITEM_CHESTOBERRY] = "callback onEat; callback onUpdate",
     [DFI_ITEM_FOCUSBAND] = "callback onDamage; callback onDamagePriority",
     [DFI_ITEM_KINGSROCK] = "callback onModifyMove; callback onModifyMovePriority",
     [DFI_ITEM_LEPPABERRY] = "callback onEat; callback onUpdate; read by id in data/items.ts; read by id in data/moves.ts; read by id in sim/pokemon.ts",
     [DFI_ITEM_LIGHTBALL] = "callback onModifyAtk; callback onModifyAtkPriority; callback onModifySpA; callback onModifySpAPriority",
     [DFI_ITEM_METRONOME] = "callback onStart; condition block; read by id in data/moves.ts; read by id in sim/pokemon.ts",
     [DFI_ITEM_NORMALGEM] = "callback onSourceTryPrimaryHit",
-    [DFI_ITEM_ORANBERRY] = "callback onEat; callback onTryEatItem; callback onUpdate; read by id in data/abilities.ts; read by id in sim/pokemon.ts",
-    [DFI_ITEM_PECHABERRY] = "callback onEat; callback onUpdate",
-    [DFI_ITEM_PERSIMBERRY] = "callback onEat; callback onUpdate",
     [DFI_ITEM_QUICKCLAW] = "callback onFractionalPriority; callback onFractionalPriorityPriority",
-    [DFI_ITEM_RAWSTBERRY] = "callback onEat; callback onUpdate",
     [DFI_ITEM_SHEDSHELL] = "callback onMaybeTrapPokemon; callback onMaybeTrapPokemonPriority; callback onTrapPokemon; callback onTrapPokemonPriority",
     [DFI_ITEM_SHELLBELL] = "callback onAfterMoveSecondarySelf; callback onAfterMoveSecondarySelfPriority",
     [DFI_ITEM_ZOOMLENS] = "callback onSourceModifyAccuracy; callback onSourceModifyAccuracyPriority",
@@ -7048,10 +7073,10 @@ const char *const dfi_pool_ability_unmodeled[DFI_POOL_ABILITY_COUNT] = {
 };
 
 const uint8_t dfi_pool_table_hash[32] = {
-    0xe4u, 0xaeu, 0xebu, 0x21u, 0xc9u, 0xaeu, 0x57u, 0x2cu,
-    0x35u, 0x2au, 0xcbu, 0x85u, 0x90u, 0xc4u, 0x93u, 0x7eu,
-    0x69u, 0xb4u, 0x13u, 0xf8u, 0x88u, 0xb2u, 0x62u, 0xb6u,
-    0x6cu, 0x30u, 0x32u, 0x4au, 0x50u, 0x11u, 0x57u, 0x3du,
+    0xdbu, 0x57u, 0x5eu, 0x80u, 0x26u, 0xe2u, 0x11u, 0x58u,
+    0xc3u, 0x5au, 0xebu, 0x31u, 0xc0u, 0xefu, 0x0eu, 0x78u,
+    0xf5u, 0xc6u, 0x76u, 0xeeu, 0xeeu, 0xdbu, 0x7du, 0xecu,
+    0x82u, 0x80u, 0x16u, 0x7du, 0xc7u, 0x0bu, 0x27u, 0x04u,
 };
 
 static size_t dfi_pool_put_u16(uint8_t *out, size_t n, uint32_t v)
@@ -7272,6 +7297,9 @@ size_t dfi_pool_canonical_bytes(uint8_t *out, size_t capacity)
     }
     for (uint32_t i = 0u; i < DFI_POOL_MOVE_COUNT; ++i) {
         out[n++] = dfi_pool_move_flags3[i];
+    }
+    for (uint32_t i = 0u; i < DFI_POOL_ITEM_COUNT; ++i) {
+        out[n++] = dfi_pool_item_berry[i];
     }
     return n;
 }

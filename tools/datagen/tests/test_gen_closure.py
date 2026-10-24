@@ -2956,5 +2956,170 @@ class FailSkillSwap(unittest.TestCase):
                       self.refused(self.pool(), abil, champ, C_BODY.replace('dfi_fails_skillswap', 'dfi_other')))
 
 
+# ---- batch I2 (decision 0015 entry 5eg): the cure and heal berry families, the isBerry column, the berry facts ----
+
+def cure_berry(rid, name, test, eat=None):
+    """A cure berry as data/items.ts writes Cheri Berry (onUpdate and onEat with the same status test)."""
+    return entry(rid, 'name: "%s",' % name, 'spritenum: 63,', 'isBerry: true,', 'naturalGift: {', '\tbasePower: 80,',
+                 '\ttype: "Fire",', '},', 'onUpdate(pokemon) {', '\tif (%s) {' % test, '\t\tpokemon.eatItem();', '\t}', '},',
+                 'onEat(pokemon) {', '\tif (%s) {' % (eat or test), '\t\tpokemon.cureStatus();', '\t}', '},', 'num: 149,',
+                 'gen: 3,')
+
+
+CHERI = cure_berry('cheriberry', 'Cheri Berry', "pokemon.status === 'par'")
+PECHA = cure_berry('pechaberry', 'Pecha Berry', "pokemon.status === 'psn' || pokemon.status === 'tox'")
+PERSIM = entry('persimberry', 'name: "Persim Berry",', 'spritenum: 334,', 'isBerry: true,', 'naturalGift: {',
+               '\tbasePower: 80,', '\ttype: "Ground",', '},', 'onUpdate(pokemon) {', "\tif (pokemon.volatiles['confusion']) {",
+               '\t\tpokemon.eatItem();', '\t}', '},', 'onEat(pokemon) {', "\tpokemon.removeVolatile('confusion');", '},',
+               'num: 156,', 'gen: 3,')
+
+
+def heal_berry(rid, name, amount, tried=None):
+    """A heal berry as data/items.ts writes Oran Berry (Sitrus Berry with `amount` for baseMaxhp / 4)."""
+    return entry(rid, 'name: "%s",' % name, 'spritenum: 319,', 'isBerry: true,', 'naturalGift: {', '\tbasePower: 80,',
+                 '\ttype: "Poison",', '},', 'onUpdate(pokemon) {', '\tif (pokemon.hp <= pokemon.maxhp / 2) {',
+                 '\t\tpokemon.eatItem();', '\t}', '},', 'onTryEatItem(item, pokemon) {',
+                 "\tif (!this.runEvent('TryHeal', pokemon, null, this.effect, %s)) return false;" % (tried or amount), '},',
+                 'onEat(pokemon) {', '\tthis.heal(%s);' % amount, '},', 'num: 155,', 'gen: 3,')
+
+
+ORAN = heal_berry('oranberry', 'Oran Berry', '10')
+SITRUS = heal_berry('sitrusberry', 'Sitrus Berry', 'pokemon.baseMaxhp / 4')
+
+
+class I2BerryFamilies(unittest.TestCase):
+    """Batch I2: a cure berry gives the condition its onUpdate and onEat test, a heal berry its literal amount; a deviation,
+    an unlisted member and a rule set's change of a member fail (derive_family), and the isBerry column comes from the base
+    entry alone."""
+
+    derive = PoolFamilies.derive
+    refused = PoolFamilies.refused
+
+    def test_the_cure_berries_give_their_condition(self):
+        self.assertEqual(self.derive(CHERI, 'CURE_BERRY'), ('CURE_BERRY', 'par'))
+        self.assertEqual(self.derive(PECHA, 'CURE_BERRY'), ('CURE_BERRY', 'psn'))
+        self.assertEqual(self.derive(PERSIM, 'CURE_BERRY'), ('CURE_BERRY', 'confusion'))
+        for cond in ('slp', 'brn', 'frz'):
+            text = cure_berry('cheriberry', 'Cheri Berry', "pokemon.status === '%s'" % cond)
+            self.assertEqual(self.derive(text, 'CURE_BERRY'), ('CURE_BERRY', cond))
+        self.assertEqual(gen_closure.item_param('CURE_BERRY', 'psn'), (3, 'DFI_FAMILY_CURE_PSN'))
+        self.assertEqual(gen_closure.item_param('CURE_BERRY', 'confusion'), (6, 'DFI_FAMILY_CURE_CONFUSION'))
+
+    def test_a_cure_berry_that_deviates_is_refused(self):
+        for what, text in (('two statuses', cure_berry('cheriberry', 'Cheri Berry', "pokemon.status === 'par'",
+                                                       "pokemon.status === 'slp'")),
+                           ('tox alone', cure_berry('cheriberry', 'Cheri Berry', "pokemon.status === 'tox'")),
+                           ('half of Pecha', cure_berry('cheriberry', 'Cheri Berry', "pokemon.status === 'psn'")),
+                           ('no onEat test', CHERI.replace("\t\t\tif (pokemon.status === 'par') {\n\t\t\t\tpokemon.cureStatus();",
+                                                           "\t\t\t{\n\t\t\t\tpokemon.cureStatus();")),
+                           ('any status', CHERI.replace("pokemon.status === 'par'", 'pokemon.status')),
+                           ('extra callback', CHERI.replace('\t\tnum: 149,', '\t\tonAfterSetStatus() { },\n\t\tnum: 149,')),
+                           ('not a berry', CHERI.replace('isBerry: true', 'isBerry: false'))):
+            with self.subTest(what):
+                self.refused(text, 'CURE_BERRY', 'cheriberry is listed as CURE_BERRY but deviates')
+        self.refused(PERSIM.replace("removeVolatile('confusion')", "removeVolatile('attract')"), 'CURE_BERRY',
+                     'persimberry is listed as CURE_BERRY but deviates')
+
+    def test_the_heal_berry_gives_its_amount(self):
+        self.assertEqual(self.derive(ORAN, 'HEAL_BERRY'), ('HEAL_BERRY', 10))
+        self.assertEqual(gen_closure.item_param('HEAL_BERRY', 10), (10, '10u'))
+
+    def test_a_heal_berry_that_deviates_is_refused(self):
+        for what, text in (('Sitrus, no literal', SITRUS.replace('sitrusberry', 'oranberry')),
+                           ('TryHeal amount', heal_berry('oranberry', 'Oran Berry', '10', '20')),
+                           ('threshold', ORAN.replace('maxhp / 2', 'maxhp / 4')),
+                           ('no TryEatItem', ORAN.replace("\t\tonTryEatItem(item, pokemon) {\n\t\t\tif (!this.runEvent('TryHeal', "
+                                                          "pokemon, null, this.effect, 10)) return false;\n\t\t},\n", '')),
+                           ('too much for the byte', heal_berry('oranberry', 'Oran Berry', '255'))):
+            with self.subTest(what):
+                self.refused(text, 'HEAL_BERRY', 'oranberry is listed as HEAL_BERRY but deviates')
+
+    def test_sitrus_and_lum_are_no_members(self):
+        self.assertEqual(self.derive(SITRUS, 'NONE'), ('NONE', None))
+
+    def test_an_unlisted_berry_of_a_family_is_refused(self):
+        self.refused(CHERI, 'NONE', 'cheriberry follows the CURE_BERRY pattern but decision 0015 does not list it')
+        self.refused(ORAN, 'NONE', 'oranberry follows the HEAL_BERRY pattern but decision 0015 does not list it')
+
+    def test_a_rule_set_may_not_change_a_member(self):
+        champ = entry('cheriberry', 'inherit: true,', 'onEat() { },')
+        with self.assertRaises(SystemExit):
+            self.derive(CHERI, 'CURE_BERRY', champ=champ)
+
+    def test_the_members_are_the_seven_berries(self):
+        self.assertEqual(sorted(gen_closure.ITEM_MEMBERS['CURE_BERRY']),
+                         ['aspearberry', 'cheriberry', 'chestoberry', 'pechaberry', 'persimberry', 'rawstberry'])
+        self.assertEqual(gen_closure.ITEM_MEMBERS['HEAL_BERRY'], ['oranberry'])
+        self.assertEqual(gen_closure.ITEM_FAMILIES, ['NONE', 'TYPE_BOOSTER', 'RESIST_BERRY', 'CURE_BERRY', 'HEAL_BERRY'])
+        self.assertNotIn('leppaberry', [i for ids in gen_closure.ITEM_MEMBERS.values() for i in ids])
+
+    def test_the_isberry_column(self):
+        items = TextSource('data/items.ts', '\n'.join([CHERI, BOOSTER, CHERI.replace('cheriberry', 'odd').replace(
+            'isBerry: true', 'isBerry: false')]))
+        none = TextSource('data/mods/champions/items.ts', '')
+        self.assertEqual(gen_closure.item_is_berry(items, none, 'cheriberry'), 1)
+        self.assertEqual(gen_closure.item_is_berry(items, none, 'blackbelt'), 0)
+        with self.assertRaises(SystemExit) as cm:
+            gen_closure.item_is_berry(items, none, 'odd')
+        self.assertIn('isBerry is', str(cm.exception.code))
+        champ = TextSource('data/mods/champions/items.ts', entry('blackbelt', 'inherit: true,', 'isBerry: true,'))
+        with self.assertRaises(SystemExit) as cm:
+            gen_closure.item_is_berry(items, champ, 'blackbelt')
+        self.assertIn('changes isBerry', str(cm.exception.code))
+
+
+class _Readers:
+    """ReaderIndex's answer for the test: the files that read each id outside its own entry."""
+
+    def __init__(self, files):
+        self.by_id = files
+
+    def files(self, rid, own):
+        return list(self.by_id.get(rid, []))
+
+
+class I2BerryFacts(unittest.TestCase):
+    """Batch I2: the sim texts of eatItem, cureStatus and Bug Bite (I2_SIM_FACTS) are demanded whole, and the I2 berries are
+    read by id only where I2_READERS says (Oran by Anger Shell's and Berserk's lists and RESTORATIVE_BERRIES)."""
+
+    def sources(self, skip=None):
+        return {rel: TextSource(rel, '\n'.join(f for i, f in enumerate(facts) if (rel, i) != skip))
+                for rel, facts in gen_closure.I2_SIM_FACTS}
+
+    def abilities(self, readers=('angershell', 'berserk')):
+        return TextSource('data/abilities.ts', '\n'.join(
+            entry(a, 'onTryEatItem(item) {', "\tconst healingItems = ['sitrusberry', 'oranberry'];", '},')
+            for a in readers))
+
+    def items(self):
+        return TextSource('data/items.ts', '\n'.join(entry(i, 'name: "X",') for i in
+                                                     gen_closure.I2_CURE_BERRIES + gen_closure.I2_HEAL_BERRIES))
+
+    def readers(self, extra=None):
+        files = {'oranberry': ['data/abilities.ts', 'sim/pokemon.ts']}
+        files.update(extra or {})
+        return _Readers(files)
+
+    def test_the_facts_are_accepted(self):
+        gen_closure.check_5eg_facts(self.sources(), self.items(), self.abilities(), self.readers())
+
+    def test_every_fact_is_demanded(self):
+        for rel, facts in gen_closure.I2_SIM_FACTS:
+            for i in range(len(facts)):
+                with self.subTest(rel=rel, fact=i), self.assertRaises(SystemExit) as cm:
+                    gen_closure.check_5eg_facts(self.sources((rel, i)), self.items(), self.abilities(), self.readers())
+                self.assertIn('no longer has', str(cm.exception.code))
+
+    def test_a_new_reader_fails(self):
+        for extra in ({'cheriberry': ['data/moves.ts']}, {'oranberry': ['data/abilities.ts']}):
+            with self.subTest(extra=extra), self.assertRaises(SystemExit) as cm:
+                gen_closure.check_5eg_facts(self.sources(), self.items(), self.abilities(), self.readers(extra))
+            self.assertIn('is read by id in', str(cm.exception.code))
+        with self.assertRaises(SystemExit) as cm:
+            gen_closure.check_5eg_facts(self.sources(), self.items(), self.abilities(('angershell', 'berserk', 'gluttony')),
+                                        self.readers())
+        self.assertIn('reads oranberry outside', str(cm.exception.code))
+
+
 if __name__ == '__main__':
     unittest.main()

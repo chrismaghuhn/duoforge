@@ -1330,18 +1330,25 @@
  * Items: TYPE_BOOSTER holds BasePower x4915/4096 for a move of the type
  * (priority 15); RESIST_BERRY is eaten on a super effective hit of the type
  * (ModifyDamage x0.5); the Normal berry (Chilan) halves any Normal hit,
- * since a Normal move is never super effective.
+ * since a Normal move is never super effective. CURE_BERRY (batch I2) is
+ * eaten at Update while its holder has the one condition of its parameter
+ * (a DFI_FAMILY_CURE_*) and cures it; HEAL_BERRY (batch I2) is eaten at
+ * Update at half HP or less (TryHeal first: Heal Block refuses it) and heals
+ * the HP of its parameter.
  * Abilities: ATE turns Normal moves into the type and gives them BasePower
  * x4915/4096 (priority 23); PINCH gives Atk and SpA x1.5 for a move of the
  * type at a third of the HP or less; WEATHER_SETTER and TERRAIN_SETTER set
  * the field condition on entry.
- * The parameter is a DFI_TYPE_* (items; ATE and PINCH), a
+ * The parameter is a DFI_TYPE_* (TYPE_BOOSTER, RESIST_BERRY; ATE and PINCH), a
+ * DFI_FAMILY_CURE_* (CURE_BERRY), the HP healed (HEAL_BERRY), a
  * DFI_FAMILY_WEATHER_* or a DFI_FAMILY_TERRAIN_*, and DFI_FAMILY_PARAM_NONE
  * where there is no family. The weather and terrain codes are the state
  * values of the engine (DFI_WEATHER_*, DFI_TERRAIN_*). */
 #define DFI_ITEM_FAMILY_NONE 0u
 #define DFI_ITEM_FAMILY_TYPE_BOOSTER 1u
 #define DFI_ITEM_FAMILY_RESIST_BERRY 2u
+#define DFI_ITEM_FAMILY_CURE_BERRY 3u
+#define DFI_ITEM_FAMILY_HEAL_BERRY 4u
 #define DFI_ABILITY_FAMILY_NONE 0u
 #define DFI_ABILITY_FAMILY_ATE 1u
 #define DFI_ABILITY_FAMILY_PINCH 2u
@@ -1355,6 +1362,12 @@
 #define DFI_FAMILY_TERRAIN_PSYCHIC 2u
 #define DFI_FAMILY_TERRAIN_ELECTRIC 3u
 #define DFI_FAMILY_TERRAIN_MISTY 4u
+#define DFI_FAMILY_CURE_SLP 1u       /* pokemon.status === 'slp' (Chesto) */
+#define DFI_FAMILY_CURE_PAR 2u       /* 'par' (Cheri) */
+#define DFI_FAMILY_CURE_PSN 3u       /* 'psn' or 'tox' (Pecha) */
+#define DFI_FAMILY_CURE_BRN 4u       /* 'brn' (Rawst) */
+#define DFI_FAMILY_CURE_FRZ 5u       /* 'frz' (Aspear) */
+#define DFI_FAMILY_CURE_CONFUSION 6u /* the confusion volatile (Persim) */
 #define DFI_FAMILY_PARAM_NONE 0xFFu
 
 /* ---- handler columns of the items and abilities: NONE for a row that the tables model (the closure and Team C
@@ -1365,7 +1378,8 @@
 
 typedef struct dfi_item_family {
     uint8_t family; /* DFI_ITEM_FAMILY_* */
-    uint8_t type;   /* the type of the family rule (DFI_TYPE_*), DFI_FAMILY_PARAM_NONE without a family */
+    uint8_t type;   /* the parameter of the family rule: a DFI_TYPE_*, a DFI_FAMILY_CURE_* (CURE_BERRY) or the HP healed
+                     * (HEAL_BERRY); DFI_FAMILY_PARAM_NONE without a family */
 } dfi_item_family;
 
 typedef struct dfi_ability_family {
@@ -1452,6 +1466,10 @@ extern const uint8_t dfi_pool_move_static_hits[DFI_POOL_MOVE_COUNT][2];
 #define DFI_MOVE_FLAG3_PULSE 8u          /* flags.pulse (step G59): Mega Launcher's BasePower x1.5 for the holder's pulse moves */
 #define DFI_MOVE_FLAG3_BULLET 16u        /* flags.bullet (step G83, approved by HauptSession): Bulletproof stops a bullet move at its holder */
 extern const uint8_t dfi_pool_move_flags3[DFI_POOL_MOVE_COUNT];
+/* The isBerry column of every item (batch I2, decision 0015 entry 5eg): 1 for an item whose base entry in data/items.ts
+ * has isBerry (a rule set may not change it), else 0; by item id. The engine reads it for the eaten flag of ITEM_END and
+ * for Bug Bite's steal. The very last part of the canonical pool bytes. */
+extern const uint8_t dfi_pool_item_berry[DFI_POOL_ITEM_COUNT];
 extern const dfi_pool_alias dfi_pool_forme_aliases[DFI_POOL_ALIAS_COUNT];
 
 /* ---- names ----
@@ -1476,7 +1494,7 @@ extern const char *const dfi_pool_item_unmodeled[DFI_POOL_ITEM_COUNT];
 extern const char *const dfi_pool_ability_unmodeled[DFI_POOL_ABILITY_COUNT];
 
 /* SHA-256 of the canonical pool bytes (written by the generator). */
-#define DFI_POOL_CANONICAL_SIZE 54758u
+#define DFI_POOL_CANONICAL_SIZE 54924u
 extern const uint8_t dfi_pool_table_hash[32];
 /* The canonical bytes of the closure layout over the first `formes`, `moves`,
  * `items` and `abilities` rows of the tables above, with every immunity byte

@@ -117,8 +117,10 @@ static void rows_item(df_test *t, const duoforge_context *ctx, uint32_t count)
             continue;
         }
         const dfi_item_family *fam = &dfi_pool_item_family[id];
-        DF_CHECK_EQ_U64(t, got.family, fam->family);
-        DF_CHECK_EQ_U64(t, got.family_type, fam->family == 0u ? DUOFORGE_DATA_NONE : fam->type);
+        /* batch I2 (decision 0015 entry 5eg): the cure and heal berry families are internal, reported as no family */
+        const bool published = fam->family == DFI_ITEM_FAMILY_TYPE_BOOSTER || fam->family == DFI_ITEM_FAMILY_RESIST_BERRY;
+        DF_CHECK_EQ_U64(t, got.family, published ? fam->family : DUOFORGE_ITEM_FAMILY_NONE);
+        DF_CHECK_EQ_U64(t, got.family_type, published ? fam->type : DUOFORGE_DATA_NONE);
         const bool stone = dfi_pool_items[id].mega_forme != DFI_FORME_NONE;
         DF_CHECK_EQ_U64(t, got.is_mega_stone, stone ? 1u : 0u);
         DF_CHECK_EQ_U64(t, got.mega_species, stone ? dfi_pool_items[id].mega_forme : DUOFORGE_DATA_NONE);
@@ -520,7 +522,7 @@ static void layout(df_test *t)
     for (uint32_t i = 0u; i < sizeof bits / sizeof bits[0]; ++i) {
         DF_CHECK_EQ_U64(t, bits[i], 1u << i);
     }
-    DF_CHECK_EQ_U64(t, DFI_POOL_CANONICAL_SIZE, 54758u); /* step G66 adds the battle-only Blade row (54664 before). The pool canonical bytes: 4 + 2 bytes more per move, and 1 more per move (step G57) */
+    DF_CHECK_EQ_U64(t, DFI_POOL_CANONICAL_SIZE, 54924u); /* batch I2 (decision 0015 entry 5eg) adds the isBerry column, one byte per item (54758 before); step G66 adds the battle-only Blade row (54664 before). The pool canonical bytes: 4 + 2 bytes more per move, and 1 more per move (step G57) */
 }
 
 /* Every target class 1..15 but one, every item and ability family and every flag occurs in the pool's rows. */

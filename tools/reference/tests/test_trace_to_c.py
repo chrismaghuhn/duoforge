@@ -593,6 +593,24 @@ class Refusals(unittest.TestCase):
         self.assertEqual(cm.exception.rule, 'each-tie-handlers')
         self.assertEqual(cm.exception.detail, ctx + ':zzunknown')
 
+    def test_the_i2_berries_are_each_tie_handlers(self):
+        """Batch I2 (decision 0015 entry 5eg): the cure berries and Oran Berry have an onUpdate, like Sitrus and Lum: two tied holders
+        keep the each:Update tie (the engine draws, dfi_update has the same holders), one holder drops it. Without its entry in
+        EACH_HANDLERS a holder would be refused (the negative control)."""
+        placed = {'sides': [{'active': [None, None], 'pokemon': []}, {'active': [None, None], 'pokemon': []}], 'weather': None}
+        ctx = 'each:Update'
+        berries = ('cheriberry', 'chestoberry', 'pechaberry', 'rawstberry', 'aspearberry', 'persimberry', 'oranberry')
+        for berry in berries:
+            with self.subTest(berry=berry):
+                self.assertIn(berry, trace_to_c.EACH_HANDLERS)
+                self.assertIsNone(trace_to_c.each_tie_reason(ctx, ['P:s1a:1:%s' % berry, 'P:s2a:1:sitrusberry'], placed))
+                self.assertEqual(trace_to_c.each_tie_reason(ctx, ['P:s1a:1:%s' % berry, 'P:s2a:0:'], placed),
+                                 'each-event tie with at most one holder')
+        self.assertNotIn('leppaberry', trace_to_c.EACH_HANDLERS)  # not marked: an HS decision
+        with self.assertRaises(SystemExit) as cm:
+            trace_to_c.each_tie_reason(ctx, ['P:s1a:1:leppaberry', 'P:s2a:1:sitrusberry'], placed)
+        self.assertEqual(cm.exception.rule, 'each-tie-handlers')
+
     def test_two_turn_move_volatile_without_twoturnmove(self):
         def mutate(spec, trace):
             mon = trace['steps'][0]['state']['sides'][1]['pokemon'][1]

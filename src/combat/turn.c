@@ -1583,34 +1583,47 @@ static duoforge_status dfi_synchronize(dfi_run *r, uint32_t holder, uint32_t sta
     return dfi_try_status(r, source, status, holder, DFI_NO_SOURCE_MOVE, DFI_ORIGIN_SYNC, 0u);
 }
 
-/* Lum Berry (step G47, data/items.ts:3537-3560): eatItem, which a foe's Unnerve refuses (onFoeTryEatItem, TryEatItem). The
- * berry is eaten (-enditem|X|Lum Berry|[eat], a berry's flag), then onEat cures the holder's status (-curestatus with [msg])
- * and removes its confusion (-end|X|confusion). Its AfterSetStatus (priority -1) and its Update call this. */
-static duoforge_status dfi_lum_cure(dfi_run *r, uint32_t flat);
+/* Lum Berry (step G47, data/items.ts:3537-3560) and the cure berries (batch I2, decision 0015 entry 5eg: Cheri, Chesto, Pecha,
+ * Rawst, Aspear and Persim, the CURE_BERRY family): eatItem of the berry `item` that the holder at `flat` holds, which a foe's
+ * Unnerve refuses (onFoeTryEatItem, TryEatItem; sim/pokemon.ts:1779-1782). The berry is eaten (-enditem|X|Berry|[eat], a
+ * berry's flag), then onEat cures (dfi_berry_cure), then AfterUseItem (Symbiosis, step G69). Lum's AfterSetStatus (priority
+ * -1) and the Update of both call this; the cure berries have no AfterSetStatus (they wait for the next Update). */
+static duoforge_status dfi_berry_cure(dfi_run *r, uint32_t flat, uint32_t item);
 
-static duoforge_status dfi_lum_berry(dfi_run *r, uint32_t flat)
+static duoforge_status dfi_eat_cure_berry(dfi_run *r, uint32_t flat, uint32_t item)
 {
     struct duoforge_battle *b = r->b;
     dfi_member *m = dfi_at(b, flat);
-    if (m == NULL || m->hp == 0u || !dfi_holds(b, m, DFI_ITEM_LUMBERRY) || dfi_unnerved(b, flat)) {
+    if (m == NULL || m->hp == 0u || dfi_item_code(b, m) != item || dfi_unnerved(b, flat)) {
         return DUOFORGE_OK;
     }
     dfi_use_item_core(r, flat, DUOFORGE_NO_POSITION);
-    const duoforge_status cured = dfi_lum_cure(r, flat);
+    const duoforge_status cured = dfi_berry_cure(r, flat, item);
     if (cured == DUOFORGE_OK) {
         dfi_symbiosis(r, flat); /* eatItem: Eat (the cure), then AfterUseItem (step G69) */
     }
     return cured;
 }
 
-/* Lum Berry's onEat for the Pokemon at `flat`, which has eaten it (step G64: also a Bug Bite user, which holds no berry): cureStatus
- * (-curestatus with [msg]) and removeVolatile('confusion') (-end). No Unnerve test: that is TryEatItem's, and only the holder's
- * own eating asks it. */
-static duoforge_status dfi_lum_cure(dfi_run *r, uint32_t flat)
+static duoforge_status dfi_lum_berry(dfi_run *r, uint32_t flat)
+{
+    return dfi_eat_cure_berry(r, flat, 1u + DFI_ITEM_LUMBERRY);
+}
+
+/* The onEat of a cure for the Pokemon at `flat`, which has eaten `item` (step G64: also a Bug Bite user, which holds no berry):
+ * what dfi_berry_cures says, judged on the eater now. Lum Berry cureStatus (-curestatus with [msg]) and removeVolatile('confusion')
+ * (-end); a cure berry its one condition, only when the eater has it (data/items.ts: the onEat repeats the onUpdate test).
+ * cureStatus (sim/pokemon.ts:1674-1682): the [msg] line, then setStatus(''), which ends the sleep's counter, the toxic stage and
+ * the freeze's turns with the status. No Unnerve test: that is TryEatItem's, and only the holder's own eating asks it. */
+static duoforge_status dfi_berry_cure(dfi_run *r, uint32_t flat, uint32_t item)
 {
     struct duoforge_battle *b = r->b;
     dfi_member *m = dfi_at(b, flat);
-    if (m->status != DFI_STATUS_NONE) {
+    dfi_active_slot *pos = dfi_pos(b, flat);
+    bool cure_status = false;
+    bool cure_confusion = false;
+    dfi_berry_cures(item, m->status, pos->confusion_turns != 0u, &cure_status, &cure_confusion);
+    if (cure_status) {
         duoforge_event cure = dfi_event_make(DUOFORGE_EVENT_CURE_STATUS, flat);
         cure.detail = m->status;
         cure.flags = (uint8_t)DUOFORGE_EVENT_FLAG_MESSAGE;
@@ -1623,8 +1636,7 @@ static duoforge_status dfi_lum_cure(dfi_run *r, uint32_t flat)
         m->status_counter = 0u;
         b->tail.sides[flat / 2u].sleep_cant[dfi_pos(b, flat)->occupant] = 0u; /* decision 0066 */
     }
-    dfi_active_slot *pos = dfi_pos(b, flat);
-    if (pos->confusion_turns != 0u) {
+    if (cure_confusion) {
         pos->confusion_turns = 0u;
         dfi_emit_plain(r, DUOFORGE_EVENT_CONFUSION_END, flat); /* [-end] confusion */
     }
@@ -2068,8 +2080,9 @@ static void dfi_use_item_of(dfi_run *r, uint32_t flat, uint32_t other)
     dfi_symbiosis(r, flat);
 }
 
-/* The item line and the Unburden volatile of a use (dfi_use_item_of without Symbiosis). A berry eaten at Update (Sitrus, Lum) calls it
- * and runs dfi_symbiosis itself after its Eat effect (eatItem: Eat, then AfterUseItem; step G69). */
+/* The item line and the Unburden volatile of a use (dfi_use_item_of without Symbiosis). A berry eaten at Update (Sitrus, Lum, and the
+ * cure and heal berries of batch I2) calls it and runs dfi_symbiosis itself after its Eat effect (eatItem: Eat, then AfterUseItem;
+ * step G69). The line has the eaten flag ([eat]) for every isBerry item (the generated column, batch I2). */
 static void dfi_use_item_core(dfi_run *r, uint32_t flat, uint32_t other)
 {
     struct duoforge_battle *b = r->b;
@@ -2078,10 +2091,7 @@ static void dfi_use_item_core(dfi_run *r, uint32_t flat, uint32_t other)
     const uint32_t item = dfi_item_code(b, &b->sides[side].members[occupant]); /* before it is used up */
     b->sides[side].members[occupant].item_consumed = 1u;
     duoforge_event e = dfi_ev(DUOFORGE_EVENT_ITEM_END, flat, DUOFORGE_CAUSE_NONE, item, other);
-    const bool berry = item == 1u + DFI_ITEM_SITRUSBERRY || item == 1u + DFI_ITEM_LUMBERRY /* step G47: isBerry */ ||
-                       (item != 0u && item <= DFI_POOL_ITEM_COUNT &&
-                        dfi_pool_item_family[item - 1u].family == DFI_ITEM_FAMILY_RESIST_BERRY);
-    e.flags = berry ? (uint8_t)DUOFORGE_EVENT_FLAG_EATEN : 0u;
+    e.flags = dfi_item_is_berry(item) ? (uint8_t)DUOFORGE_EVENT_FLAG_EATEN : 0u;
     dfi_emit(r, &e);
     /* AfterUseItem: Unburden adds its volatile (Team C, data/abilities.ts). */
     if (dfi_ability(b, &b->sides[side].members[occupant], DFI_ABILITY_UNBURDEN)) {
@@ -2093,14 +2103,16 @@ static void dfi_use_item_core(dfi_run *r, uint32_t flat, uint32_t other)
 static bool dfi_heal_blocked(const struct duoforge_battle *b, uint32_t flat);
 static void dfi_heal(dfi_run *r, uint32_t flat, uint32_t amount, uint32_t cause, uint32_t id2, uint32_t other);
 
-/* Bug Bite (step G64, data/moves.ts:1911-1931, onHit): when the user stands and the target holds a berry (the isBerry items of
- * the pool: Sitrus Berry, Lum Berry and the resist berries, Chilan and Chople included), the target's takeItem(user): a live
+/* Bug Bite (step G64, data/moves.ts:1911-1931, onHit): when the user stands and the target holds a berry (an isBerry item: the
+ * generated column of batch I2), the target's takeItem(user): a live
  * Sticky Hold shows `-activate|X|ability: Sticky Hold` and keeps the berry (as Knock Off's). The berry is then the user's to
  * eat, at once: `-enditem|X|Berry|[from] stealeat|[move] Bug Bite|[of] user` (ITEM_END, cause ITEM_TAKEN, the move in id, the user
  * in other, the eaten flag), and the Eat handler of the berry runs for the user, with no TryEatItem (no Unnerve test):
- * Sitrus heals the user by a quarter of its maximum HP (`this.heal`, which a Heal Block refuses and a full user does not show),
- * Lum cures the user and ends its confusion (dfi_lum_cure), and a resist berry's onEat is empty. The user is the eater, so
- * Unburden and the holder's item lock are not involved. `user` is the attacker, `target` a damaged foe. */
+ * Sitrus heals the user by a quarter of its maximum HP and Oran (batch I2) by 10 (`this.heal`, which a Heal Block refuses and a
+ * full user does not show), Lum and the cure berries cure the user (dfi_berry_cure: a cure berry only the condition it names, when
+ * the user has it), and a resist berry's onEat is empty. A berry whose Eat the engine does not model (Leppa Berry: it restores
+ * PP, an HS decision) is refused before anything happens; no marked item is one. The user is the eater, so Unburden and the
+ * holder's item lock are not involved. `user` is the attacker, `target` a damaged foe. */
 static duoforge_status dfi_bug_bite(dfi_run *r, uint32_t user, uint32_t target, uint32_t move_id)
 {
     struct duoforge_battle *b = r->b;
@@ -2110,11 +2122,14 @@ static duoforge_status dfi_bug_bite(dfi_run *r, uint32_t user, uint32_t target, 
         return DUOFORGE_OK; /* onHit's `source.hp` test */
     }
     const uint32_t item = dfi_item_code(b, tm);
-    const bool berry = item == 1u + DFI_ITEM_SITRUSBERRY || item == 1u + DFI_ITEM_LUMBERRY ||
-                       (item != 0u && item <= DFI_POOL_ITEM_COUNT &&
-                        dfi_pool_item_family[item - 1u].family == DFI_ITEM_FAMILY_RESIST_BERRY);
-    if (!berry) {
+    if (!dfi_item_is_berry(item)) {
         return DUOFORGE_OK; /* item.isBerry is false: nothing is taken */
+    }
+    const uint32_t family = dfi_held_family(item).family;
+    const uint32_t heal = dfi_hp_berry_heal(item, um->hp_max);
+    const bool cure = item == 1u + DFI_ITEM_LUMBERRY || family == DFI_ITEM_FAMILY_CURE_BERRY;
+    if (heal == 0u && !cure && family != DFI_ITEM_FAMILY_RESIST_BERRY) {
+        return DUOFORGE_E_UNSUPPORTED; /* a berry whose Eat is not modelled (Leppa Berry): refused, nothing has happened */
     }
     dfi_active_slot *pos = dfi_pos(b, target);
     if (tm->hp != 0u && dfi_ability(b, tm, DFI_ABILITY_STICKYHOLD)) {
@@ -2131,12 +2146,12 @@ static duoforge_status dfi_bug_bite(dfi_run *r, uint32_t user, uint32_t target, 
     e.id = (uint16_t)move_id;
     e.flags = (uint8_t)DUOFORGE_EVENT_FLAG_EATEN;
     dfi_emit(r, &e); /* [-enditem] [from] stealeat [move] Bug Bite [of] user */
-    if (item == 1u + DFI_ITEM_SITRUSBERRY) {
+    if (heal != 0u) {
         if (um->hp < um->hp_max && !dfi_heal_blocked(b, user)) {
-            dfi_heal(r, user, (uint32_t)um->hp_max / 4u, DUOFORGE_CAUSE_ITEM, 1u + DFI_ITEM_SITRUSBERRY, DUOFORGE_NO_POSITION);
+            dfi_heal(r, user, heal, DUOFORGE_CAUSE_ITEM, item, DUOFORGE_NO_POSITION);
         }
-    } else if (item == 1u + DFI_ITEM_LUMBERRY) {
-        return dfi_lum_cure(r, user);
+    } else if (cure) {
+        return dfi_berry_cure(r, user, item);
     }
     /* No AfterUseItem here: Bug Bite runs only the Eat singleEvent and EatItem of the berry (data/moves.ts:1920-1930), never
      * eatItem, so neither Unburden nor Symbiosis of the eater's side is run (step G69). */
@@ -2818,7 +2833,8 @@ static duoforge_status dfi_each_order(dfi_run *r, uint32_t bearers, uint32_t lis
 }
 
 /* eachEvent('Update'): Sitrus Berry eats at half HP or less and heals a
- * quarter, holder by holder in eachEvent's order. */
+ * quarter, holder by holder in eachEvent's order; Oran Berry (batch I2) the
+ * same with 10 HP, and the cure berries (batch I2) at their condition. */
 /* Step G71 (decision 0034): the source member of an Attract byte (1 + side * 6 + roster index) is on the field and not fainted: the
  * pin's source.isActive (data/moves.ts:722-727). A member that switched out and came back is a new entry, but the infatuation ended
  * at the first Update after its switch-out, so the check reads the member, not the position. */
@@ -2893,9 +2909,13 @@ static duoforge_status dfi_update(dfi_run *r)
          * draws no tie order: dfi_attract_update below still ends it. */
         const bool oblivious_infatuated = r->b->tail.attract_source[flat] != 0u &&
                                           dfi_ability(r->b, dfi_at(r->b, flat), DFI_ABILITY_OBLIVIOUS);
-        const bool bears = dfi_holds(r->b, dfi_at(r->b, flat), DFI_ITEM_SITRUSBERRY) ||
-                           dfi_holds(r->b, dfi_at(r->b, flat), DFI_ITEM_LUMBERRY) ||
-                           dfi_holds(r->b, dfi_at(r->b, flat), DFI_ITEM_MENTALHERB) || oblivious_infatuated;
+        /* batch I2 (decision 0015 entry 5eg): a cure berry or a heal berry holder has the item's onUpdate too, whether it acts or
+         * not (the converter's EACH_HANDLERS has the same seven ids) */
+        const uint32_t held = dfi_item_code(r->b, dfi_at(r->b, flat));
+        const uint32_t held_family = dfi_held_family(held).family;
+        const bool bears = held == 1u + DFI_ITEM_SITRUSBERRY || held == 1u + DFI_ITEM_LUMBERRY ||
+                           held == 1u + DFI_ITEM_MENTALHERB || held_family == DFI_ITEM_FAMILY_CURE_BERRY ||
+                           held_family == DFI_ITEM_FAMILY_HEAL_BERRY || oblivious_infatuated;
         bearers |= bears ? 1u << flat : 0u;
     }
     /* the inert infatuated holders: their silent end is state only, and nothing else reads it in this update */
@@ -2924,21 +2944,30 @@ static duoforge_status dfi_update(dfi_run *r)
             return attract;
         }
         const dfi_member *m = dfi_at(r->b, flat);
-        if (m->hp != 0u && dfi_holds(r->b, m, DFI_ITEM_SITRUSBERRY) && (uint32_t)m->hp * 2u <= m->hp_max &&
-            !dfi_heal_blocked(r->b, flat) && !dfi_unnerved(r->b, flat)) {
+        /* An HP berry (Sitrus; Oran, batch I2: data/items.ts:4397-4418): onUpdate at half HP or less, then eatItem: TryEatItem asks
+         * TryHeal (a Heal Block refuses, onTryEatItem) and a foe's Unnerve, then the eaten line, the heal (onEat) and AfterUseItem. */
+        const uint32_t item = dfi_item_code(r->b, m);
+        const uint32_t hp_heal = dfi_hp_berry_heal(item, m->hp_max);
+        if (m->hp != 0u && hp_heal != 0u && (uint32_t)m->hp * 2u <= m->hp_max && !dfi_heal_blocked(r->b, flat) &&
+            !dfi_unnerved(r->b, flat)) {
             dfi_use_item_core(r, flat, DUOFORGE_NO_POSITION);
-            dfi_heal(r, flat, (uint32_t)m->hp_max / 4u, DUOFORGE_CAUSE_ITEM, 1u + DFI_ITEM_SITRUSBERRY,
-                     DUOFORGE_NO_POSITION);
+            dfi_heal(r, flat, hp_heal, DUOFORGE_CAUSE_ITEM, item, DUOFORGE_NO_POSITION);
             dfi_symbiosis(r, flat); /* eatItem: Eat (the heal), then AfterUseItem (step G69) */
         }
         /* Lum Berry's onUpdate (data/items.ts:3548-3552): a status or a confusion of its holder is eaten (dfi_lum_berry asks
          * Unnerve); Mental Herb's (data/items.ts:3906-3918) cures the holder's volatiles (dfi_mental_herb). One item per holder,
          * so the two never meet on one Pokemon. */
+        /* The cure berries' onUpdate (batch I2, data/items.ts: Cheri :836-856, Chesto :877-897, Pecha :4497-4517, Persim
+         * :4518-4536, Rawst :5068-5088, Aspear :292-312) is Lum's for one condition: the onEat would cure something now. */
         const dfi_active_slot *pos = dfi_pos(r->b, flat);
-        if (m->hp != 0u && dfi_holds(r->b, m, DFI_ITEM_LUMBERRY) && (m->status != DFI_STATUS_NONE || pos->confusion_turns != 0u)) {
-            const duoforge_status lum = dfi_lum_berry(r, flat);
-            if (lum != DUOFORGE_OK) {
-                return lum;
+        bool cure_status = false;
+        bool cure_confusion = false;
+        dfi_berry_cures(item, m->status, pos->confusion_turns != 0u, &cure_status, &cure_confusion);
+        if (m->hp != 0u && (item == 1u + DFI_ITEM_LUMBERRY || dfi_held_family(item).family == DFI_ITEM_FAMILY_CURE_BERRY) &&
+            (cure_status || cure_confusion)) {
+            const duoforge_status cured = dfi_eat_cure_berry(r, flat, item);
+            if (cured != DUOFORGE_OK) {
+                return cured;
             }
         }
         const duoforge_status herb = dfi_mental_herb(r, flat);

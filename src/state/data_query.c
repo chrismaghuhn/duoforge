@@ -458,9 +458,13 @@ duoforge_status duoforge_data_item_static(const duoforge_context *ctx, uint32_t 
         return st;
     }
     const dfi_item_family *fam = &dfi_pool_item_family[item_id];
+    /* The public column names the two type families only (DUOFORGE_ITEM_FAMILY_*). The cure and heal berry families of batch I2
+     * (decision 0015 entry 5eg, internal: their parameter is a cure code or an amount of HP, not a type) are reported as no
+     * family, as before that batch: no public value changes with it. */
+    const bool published = fam->family == DFI_ITEM_FAMILY_TYPE_BOOSTER || fam->family == DFI_ITEM_FAMILY_RESIST_BERRY;
     duoforge_item_static r = {0u};
-    r.family = fam->family;
-    r.family_type = fam->family == DFI_ITEM_FAMILY_NONE ? DUOFORGE_DATA_NONE : dfi_public_id(fam->type);
+    r.family = published ? fam->family : DUOFORGE_ITEM_FAMILY_NONE;
+    r.family_type = published ? dfi_public_id(fam->type) : DUOFORGE_DATA_NONE;
     r.is_mega_stone = dfi_pool_items[item_id].mega_forme != DFI_FORME_NONE ? 1u : 0u;
     r.mega_species = r.is_mega_stone != 0u ? (uint32_t)dfi_pool_items[item_id].mega_forme : DUOFORGE_DATA_NONE;
     *out = r;

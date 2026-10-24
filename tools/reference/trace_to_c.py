@@ -813,8 +813,10 @@ def drop_reason(d, state, after=None, log=None):
 
 
 # The items and abilities whose each-event handlers (Update, TerrainChange, Weather: Rain Dish, step G35) act on their holder alone.
+# Batch I2 (decision 0015 entry 5eg): the cure berries and Oran Berry (onUpdate, like Sitrus and Lum; dfi_update has the same holders).
 EACH_HANDLERS = frozenset(('sitrusberry', 'grassyseed', 'psychicseed', 'electricseed', 'mistyseed', 'raindish', 'solarpower', 'icebody', 'limber',
-                           'lumberry', 'mentalherb'))
+                           'lumberry', 'mentalherb', 'cheriberry', 'chestoberry', 'pechaberry', 'rawstberry', 'aspearberry',
+                           'persimberry', 'oranberry'))
 
 
 def site_of(d):

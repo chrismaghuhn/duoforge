@@ -20,7 +20,12 @@
 //   - pinch: onModifyAtk and onModifySpA give x1.5 to the generated type at a
 //     third of the HP and not above it;
 //   - weather and terrain setters: onStart sets the generated condition (the
-//     Primal guard of Drizzle and Drought aside).
+//     Primal guard of Drizzle and Drought aside);
+//   - cure berry (batch I2): onUpdate eats the berry for exactly the generated
+//     condition (Pecha: psn and tox) and onEat cures exactly that condition;
+//   - heal berry (batch I2): onUpdate eats it at half HP or less, TryEatItem
+//     asks TryHeal for the generated amount and onEat heals that amount;
+//   - the isBerry column (batch I2) is the item's isBerry in the format's dex.
 // Every id without a family must not behave like a member. The ids of the
 // pool are also validated by the pinned TeamValidator (the check of
 // docs/research/expansion/tools/build_legal_pool.js): every item holds on
@@ -51,7 +56,10 @@ const FORMAT_ID = FORMAT.showdown_format_id;
 // The 18 battle types in the order of the tables (Stellar is not part of Champions).
 const TYPES = ['Bug', 'Dark', 'Dragon', 'Electric', 'Fairy', 'Fighting', 'Fire', 'Flying', 'Ghost', 'Grass', 'Ground',
     'Ice', 'Normal', 'Poison', 'Psychic', 'Rock', 'Steel', 'Water'];
-const ITEM_FAMILIES = ['NONE', 'TYPE_BOOSTER', 'RESIST_BERRY'];
+const ITEM_FAMILIES = ['NONE', 'TYPE_BOOSTER', 'RESIST_BERRY', 'CURE_BERRY', 'HEAL_BERRY'];
+// The conditions of the cure codes (DFI_FAMILY_CURE_*, batch I2), as the probe names them: a status, or the confusion.
+const CURES = {SLP: ['slp'], PAR: ['par'], PSN: ['psn', 'tox'], BRN: ['brn'], FRZ: ['frz'], CONFUSION: ['confusion']};
+const CONDITIONS = ['slp', 'par', 'psn', 'tox', 'brn', 'frz', 'confusion'];
 const ABILITY_FAMILIES = ['NONE', 'ATE', 'PINCH', 'WEATHER_SETTER', 'TERRAIN_SETTER'];
 // The names of the generated weather and terrain codes, as Showdown calls them.
 const WEATHER = {RAIN: 'raindance', SUN: 'sunnyday', SAND: 'sandstorm', SNOW: 'snowscape'};
@@ -269,6 +277,47 @@ function resistedTypes(item, typeMod) {
         }
     }
     return fired;
+}
+
+// Batch I2: the conditions for which a berry's onUpdate eats it, and those its onEat cures (a cureStatus of the stub's status,
+// or a removeVolatile of a confusion it has), each probed on a holder with that one condition.
+function cureProbe(item) {
+    const eaten = [];
+    const cured = [];
+    for (const cond of CONDITIONS) {
+        const stub = () => {
+            const log = [];
+            const pokemon = {hp: 100, maxhp: 100, status: cond === 'confusion' ? '' : cond,
+                volatiles: cond === 'confusion' ? {confusion: {}} : {}, moveSlots: [],
+                eatItem() { log.push('eat'); return true; }, cureStatus() { if (pokemon.status) log.push('cure'); return true; },
+                removeVolatile(id) { if (pokemon.volatiles[id]) log.push('cure'); return true; }};
+            return {pokemon, log};
+        };
+        const u = stub();
+        call(item.onUpdate, battle(item), [u.pokemon]);
+        if (u.log.includes('eat')) eaten.push(cond);
+        const e = stub();
+        call(item.onEat, battle(item), [e.pokemon]);
+        if (e.log.includes('cure')) cured.push(cond);
+    }
+    return {eaten, cured};
+}
+
+// Batch I2: a heal berry's three handlers against stubs: the HP at which onUpdate eats it (of 100 and of 101), the amount that
+// onTryEatItem asks TryHeal for and whether a refused TryHeal refuses the eating, and the amount that onEat heals.
+function healProbe(item) {
+    const eatsAt = [];
+    for (const [hp, maxhp] of [[49, 100], [50, 100], [51, 100], [50, 101], [51, 101]]) {
+        let eaten = 0;
+        call(item.onUpdate, battle(item), [{hp, maxhp, eatItem() { eaten += 1; return true; }}]);
+        if (eaten) eatsAt.push(hp + '/' + maxhp);
+    }
+    const asked = [];
+    const tried = call(item.onTryEatItem, battle(item, {runEvent: (id, p, s, e, n) => { asked.push([id, n]); return false; }}),
+        [item, {}]);
+    const healed = [];
+    call(item.onEat, battle(item, {heal: (n) => { healed.push(n); return n; }}), [{hp: 10, maxhp: 100}]);
+    return {eatsAt, asked, refused: tried === false, healed};
 }
 
 // What an "-ate" ability does to a move of each type: {type: new type} for the changed ones, and the
@@ -595,12 +644,38 @@ function checkItems(dex, rows, unmodeled) {
                 if (typeof item.onSourceModifyDamage === 'function') {
                     expect(row.id + ' (no family) resist berry probe', resistedTypes(item, 1), []);
                 }
+                // Batch I2: a modelled berry without a family is not eaten for exactly one cure condition (Lum Berry is eaten
+                // for every one) and does not heal a literal amount (Sitrus Berry heals a quarter: the probe's 25 of 100).
+                if (item.isBerry && typeof item.onUpdate === 'function') {
+                    const probe = cureProbe(item);
+                    if (Object.values(CURES).some((c) => same(probe.eaten, c))) {
+                        bad(row.id + ' behaves like a cure berry of ' + probe.eaten + ' but is no family member');
+                    }
+                }
             } else if (typeof item.onBasePower === 'function') {
                 const probe = boostedTypes(item);
                 if (probe.fired.length === 1 && probe.modifiers.length === 1 && probe.modifiers[0] === JSON.stringify([4915, 4096])) {
                     bad(row.id + ' behaves like a type booster of ' + probe.fired[0] + ' but is no family member');
                 }
             }
+            continue;
+        }
+        if (row.family === 'CURE_BERRY') {
+            const code = row.param.match(/^DFI_FAMILY_CURE_(\w+)$/);
+            const want = code === null ? undefined : CURES[code[1]];
+            if (want === undefined) {
+                bad(row.id + ': ' + row.param + ' is not a cure code');
+                continue;
+            }
+            expect(row.id + ' cure berry probe', cureProbe(item), {eaten: want, cured: want});
+            expect(row.id + ' isBerry', item.isBerry, true);
+            continue;
+        }
+        if (row.family === 'HEAL_BERRY') {
+            const amount = Number((row.param.match(/^(\d+)u$/) || [])[1]);
+            expect(row.id + ' heal berry probe', healProbe(item),
+                {eatsAt: ['49/100', '50/100', '50/101'], asked: [['TryHeal', amount]], refused: true, healed: [amount]});
+            expect(row.id + ' isBerry', item.isBerry, true);
             continue;
         }
         const type = typeOf(row.param);
@@ -624,6 +699,25 @@ function checkItems(dex, rows, unmodeled) {
         }
     }
     return counts;
+}
+
+// Batch I2: the isBerry column (dfi_pool_item_berry, the rows that are 1) against the format's dex, for every item row.
+function checkBerryColumn(dex, source, itemRows) {
+    const start = source.indexOf('const uint8_t dfi_pool_item_berry[');
+    if (start < 0) {
+        bad('dfi_pool_item_berry not found');
+        return;
+    }
+    const end = source.indexOf('\n};', start);
+    const berries = new Set([...source.slice(start, end).matchAll(/^\s*\[DFI_ITEM_(\w+)\] = 1u,$/gm)].map((m) => m[1].toLowerCase()));
+    for (const row of itemRows) {
+        expect(row.id + ' isBerry column', berries.has(row.id), dex.items.get(row.id).isBerry === true);
+    }
+    for (const id of berries) {
+        if (!itemRows.some((r) => r.id === id)) {
+            bad('dfi_pool_item_berry names ' + id + ', which is no item row');
+        }
+    }
 }
 
 // Focus Sash (no family column; the engine names it): its onDamage is called with the effect of each kind of
@@ -2245,6 +2339,7 @@ function main() {
     const unmodeledMoves = new Set(moveColumns(source, defineOf(header, 'DFI_POOL_MOVE_COUNT'))
         .map((row, number) => (row[28] === specialUnmodeled ? moveIds.get(number) : undefined)).filter((id) => id !== undefined));
     const items = checkItems(dex, itemRows, unmodeledItems);
+    checkBerryColumn(dex, source, itemRows);
     checkFocusSash(dex, root);
     checkWeather(dex, source);
     checkTerrains(dex);
@@ -2274,6 +2369,8 @@ function main() {
     // "All 18": a booster and a resist berry for each type, and nothing else in the families.
     expect('type boosters', items.TYPE_BOOSTER, 18);
     expect('resist berries', items.RESIST_BERRY, 18);
+    expect('cure berries', items.CURE_BERRY, 6); // batch I2: Aspear, Cheri, Chesto, Pecha, Persim, Rawst
+    expect('heal berries', items.HEAL_BERRY, 1); // batch I2: Oran
     expect('"-ate" abilities', abilities.ATE, 4); // step G61: Dragonize joins Aerilate, Pixilate and Refrigerate
     expect('pinch abilities', abilities.PINCH, 4);
     expect('weather setters', abilities.WEATHER_SETTER, 4);

@@ -20,8 +20,8 @@ from .moves import (
     parse_pool_move, prefix_flag_reads, SAND_IMMUNITY, STATUS_IMMUNITY, STATUS_IMMUNITY_C, STATUS_IMMUNITY_P)
 from .families import derive_family, ENGINE_ROWS, HANDLER_IDS
 from .items import (
-    check_g28_items, check_g49_facts, check_g55_items, entry_features, G2_ITEMS, INERT_ITEM_KEYS, ITEM_FAMILIES,
-    ITEM_MATCHERS, ITEM_MEMBERS, item_param, POOL_ITEMS)
+    check_5eg_facts, check_g28_items, check_g49_facts, check_g55_items, entry_features, G2_ITEMS, INERT_ITEM_KEYS,
+    ITEM_FAMILIES, item_is_berry, ITEM_MATCHERS, ITEM_MEMBERS, item_param, POOL_ITEMS)
 from .abilities import (
     ABILITY_FAMILIES, ABILITY_MATCHERS, ABILITY_MEMBERS, ability_param, check_a2a_facts, check_g30_facts, check_g37_facts,
     check_g57_facts, check_i2_facts, FAILSKILLSWAP_SOURCE, G2_ABILITIES, INERT_ABILITY_KEYS, POOL_ABILITIES)
@@ -478,6 +478,12 @@ def build_pool(root, repo, dx, ts):
         param, pname = ability_param(fam, fact)
         ability_family.append({'family': fam, 'family_id': ABILITY_FAMILIES.index(fam), 'param': param,
                                'param_name': pname})
+    # Batch I2 (decision 0015 entry 5eg): the isBerry column of every item, from the base entry (item_is_berry); every member
+    # of a berry family is a berry.
+    item_berry = [item_is_berry(items_ts, champ_items, it['id']) for it in items]
+    for it, col, berry in zip(items, item_family, item_berry):
+        if col['family'] in ('RESIST_BERRY', 'CURE_BERRY', 'HEAL_BERRY') and not berry:
+            fail('item %s is in the %s family but has no isBerry' % (it['id'], col['family']))
     # "All 18": one type booster and one resist berry for every type, and no other member of either family.
     for fam in ('TYPE_BOOSTER', 'RESIST_BERRY'):
         types = sorted(c['param'] for c in item_family if c['family'] == fam)
@@ -489,6 +495,8 @@ def build_pool(root, repo, dx, ts):
               ts.file('abilities'): champ_abil, ts.file('items'): champ_items,
               ts.file('moves'): champ_moves, ts.file('scripts'): Source(root, ts.file('scripts'))}
     readers = ReaderIndex(root, loaded)
+    check_5eg_facts({'sim/pokemon.ts': Source(root, 'sim/pokemon.ts', READER_INPUTS), 'data/moves.ts': moves_ts}, items_ts,
+                    abil_ts, readers)
     n_ext_items, n_ext_abilities = len(dx['items']), len(dx['abilities'])
     for i, (it, col) in enumerate(zip(items, item_family)):
         if i < n_ext_items or col['family'] != 'NONE' or it['id'] in ENGINE_ROWS['items']:
@@ -535,7 +543,7 @@ def build_pool(root, repo, dx, ts):
         if m['flags2'] & FLAGS2_BITS['sound'] and m['flags2'] & FLAGS2_BITS['heal']:
             fail('move %s has the sound and the heal flags: the BeforeMove tie of Throat Chop and Heal Block would show' % m['id'])
     d = dict(dx, immunity=immunity, formes=formes, moves=moves, items=items, abilities=abilities,
-             item_family=item_family,
+             item_family=item_family, item_berry=item_berry,
              ability_family=ability_family, forme_legal=legal_formes, aliases=aliases, legal_counts=legal['counts'],
              flags_that_matter=sorted(FLAGS_THAT_MATTER), steps=dict(items=n_steps[0], abilities=n_steps[1],
                                                                     moves=n_steps_moves))
