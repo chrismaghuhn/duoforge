@@ -1,0 +1,70 @@
+{
+  "name": "fz548_iron_ball_corviknight",
+  "purpose": "Rampardos's Mud-Slap hits Corviknight, which holds an Iron Ball: Iron Ball's onEffectiveness makes the Ground move neutral against the Flying dual type (data/items.ts:3056-3060); on main the engine applied Steel's weakness (issue 548). A battle of the differential fuzzing of issue 396 (free random sets, fz_236_101), whole. The choices and the seed are those of the campaign; the trace is recorded with the pinned Showdown (b2cb775).",
+  "data": "pool",
+  "format": "gen9championsvgc2026regmc",
+  "seed": "sodium,0ce86a37a2145bdae5c811e0514c489ddc413a1d80690c1aa41bc98b77b762d9",
+  "teams": [
+    "indeedeef (F) @ icyrock\nAbility: synchronize\nLevel: 50\nEVs: 9 HP / 7 Atk / 21 Def / 13 SpA / 9 SpD / 7 Spe\nLax Nature\n- psychic\n- shadowball\n- psychup\n- followme\n\nalakazam (M) @ alakazite\nAbility: synchronize\nLevel: 50\nEVs: 8 HP / 11 Atk / 10 Def / 11 SpA / 14 SpD / 12 Spe\nLonely Nature\n- calmmind\n- firepunch\n- trickroom\n- energyball\n\nbellibolt (M) @ passhoberry\nAbility: damp\nLevel: 50\nEVs: 11 HP / 10 Atk / 12 Def / 11 SpA / 10 SpD / 12 Spe\nRash Nature\n- electroweb\n- chillingwater\n- lightscreen\n- toxic\n\ngyarados (M) @ whiteherb\nAbility: intimidate\nLevel: 50\nEVs: 11 HP / 12 Atk / 12 Def / 9 SpA / 8 SpD / 14 Spe\nNaughty Nature\n- scald\n- doubleedge\n- scaryface\n- earthquake\n\nrampardos (F) @ absolite\nAbility: sheerforce\nLevel: 50\nEVs: 6 HP / 11 Atk / 12 Def / 14 SpA / 13 SpD / 10 Spe\nLonely Nature\n- thief\n- mudslap\n- dragontail\n- trailblaze\n\nfarigiraf (M) @ smoothrock\nAbility: armortail\nLevel: 50\nEVs: 1 HP / 1 Atk / 3 Def / 1 SpA / 1 SpD / 3 Spe\nCareful Nature\n- beatup\n- calmmind\n- endeavor\n- helpinghand",
+    "orthworm (M) @ focussash\nAbility: sandveil\nLevel: 50\nEVs: 11 HP / 12 Atk / 11 Def / 9 SpA / 13 SpD / 10 Spe\nNaughty Nature\n- ironhead\n- rocktomb\n- substitute\n- bodyslam\n\nsquawkabillyyellow (F) @ meowsticite\nAbility: sheerforce\nLevel: 50\nEVs: 14 HP / 12 Atk / 9 Def / 12 SpA / 11 SpD / 8 Spe\nBold Nature\n- heatwave\n- helpinghand\n- thief\n- bravebird\n\npersianalola (M) @ scopelens\nAbility: technician\nLevel: 50\nEVs: 11 HP / 7 Atk / 13 Def / 8 SpA / 13 SpD / 14 Spe\nQuiet Nature\n- gigaimpact\n- nightslash\n- charm\n- nastyplot\n\ncorviknight (M) @ ironball\nAbility: pressure\nLevel: 50\nEVs: 4 HP / 4 Atk / 5 Def / 4 SpA / 1 SpD / 1 Spe\nQuiet Nature\n- aerialace\n- roost\n- gigaimpact\n- hyperbeam\n\npawmot (F) @ meganiumite\nAbility: voltabsorb\nLevel: 50\nEVs: 13 HP / 5 Atk / 13 Def / 10 SpA / 15 SpD / 10 Spe\nDocile Nature\n- electroweb\n- lowsweep\n- thunder\n- superfang\n\navalugg (M) @ froslassite\nAbility: sturdy\nLevel: 50\nEVs: 11 HP / 12 Atk / 6 Def / 6 SpA / 5 SpD / 7 Spe\nImpish Nature\n- icespinner\n- scaryface\n- earthquake\n- snowscape"
+  ],
+  "choices": [
+    {
+      "p1": "team 6254",
+      "p2": "team 5146"
+    },
+    {
+      "p1": "move 1 -2, switch 3",
+      "p2": "move 2 1, switch 3"
+    },
+    {
+      "p1": "move 4 -2, move 1 2",
+      "p2": "move 3 1, move 1 -1"
+    },
+    {
+      "p1": "move 2, move 2 1",
+      "p2": "move 1, move 1 2"
+    },
+    {
+      "p1": "move 4 -2, move 2 2",
+      "p2": "move 4 2, move 4 1"
+    },
+    {
+      "p1": "move 1 2, move 2 1",
+      "p2": "move 4 -2, move 1"
+    },
+    {
+      "p1": "move 2, move 2 -1",
+      "p2": "move 1, move 3 1"
+    },
+    {
+      "p1": "switch 3, switch 4"
+    },
+    {
+      "p1": "move 4 2, move 2 -1",
+      "p2": "move 2 -2, move 1"
+    },
+    {
+      "p2": "pass, switch 3"
+    },
+    {
+      "p1": "move 4 2 mega, move 3 2",
+      "p2": "move 3 1, move 4 2"
+    },
+    {
+      "p1": "move 1, move 2 -1",
+      "p2": "move 4 -2, move 1 2"
+    },
+    {
+      "p1": "pass, move 1 2",
+      "p2": "move 4 2, move 2 -1"
+    },
+    {
+      "p2": "pass, switch 4"
+    },
+    {
+      "p1": "pass, move 4",
+      "p2": "move 2 -2, move 1 1"
+    }
+  ]
+}
